@@ -1,8 +1,54 @@
 'use client'
 
-import React from 'react';
+import React, { useState, useEffect } from "react";
+import CreateGoalModal from "@/components/CreateGoalModal";
+import axios, { AxiosError } from "axios";
+import { useSession } from "next-auth/react";
+
+const backendUrl = "http://localhost:5000";
 
 export default function HomePage() {
+  const { data: session, status } = useSession();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleSaveGoal = async (goalData: any) => {
+    if (status !== "authenticated") {
+      console.error("User not authenticated");
+      return;
+    }
+
+    // Get user_id from session (adjust if your session.user uses different key)
+    const userId = session?.user?.user_id || session?.user?.email;
+
+
+    if (!userId) {
+      console.error("User ID not found in session");
+      return;
+    }
+
+    // Add user_id to goalData
+    const goalDataWithUser = { ...goalData, user_id: userId };
+
+    try {
+      const res = await axios.post(`${backendUrl}/api/goals`, goalDataWithUser);
+      if (res.status === 201) {
+        console.log("✅ Goal created successfully");
+      }
+    } catch (error) {
+      console.error("❌ Failed to create goal", error);
+
+      if (error instanceof AxiosError) {
+        console.error("Error status:", error.response?.status);
+        console.error("Error data:", error.response?.data);
+        console.error("Error message:", error.message);
+      } else {
+        console.error("Unknown error:", error);
+      }
+    }
+  };
+
+
+
   const studyGoals = [
     {
       id: 1,
@@ -123,10 +169,19 @@ export default function HomePage() {
                   <div className="text-sm text-gray-600">Completed</div>
                 </div>
               </div>
-              <button className="bg-teal-500 hover:bg-teal-600 text-white px-6 py-3 rounded-lg font-medium transition-colors cursor-pointer">
+              <button
+              onClick={() => setIsModalOpen(true)} 
+              className="bg-teal-500 hover:bg-teal-600 text-white px-6 py-3 rounded-lg font-medium transition-colors cursor-pointer">
                 Create New Goal
               </button>
             </div>
+            
+            {/* Modal */}
+            <CreateGoalModal
+              isOpen={isModalOpen}
+              onClose={() => setIsModalOpen(false)}
+              onSave={handleSaveGoal}
+            />
 
             {/* Study Goals Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

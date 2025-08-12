@@ -3,6 +3,10 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
+const authRoutes = require('./routes/authRoutes');
+const goalsRoutes = require('./routes/goalsRoutes');
+const userRoutes = require('./routes/userRoutes');
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -23,14 +27,17 @@ app.get('/health', (req, res) => {
   });
 });
 
+
+
 // Passport config
 require('./passport');
 const passport = require('passport');
 app.use(passport.initialize());
 
 // Routes
-const authRoutes = require('./routes/authRoutes');
 app.use('/api/auth', authRoutes);
+app.use('/api/goals', goalsRoutes);
+app.use('/api/users', userRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

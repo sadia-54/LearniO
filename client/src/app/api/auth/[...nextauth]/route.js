@@ -9,55 +9,38 @@ export const authOptions = {
     }),
   ],
   callbacks: {
-    async signIn({ user, account, profile, email, credentials }) {
-      try {
-        console.log('🔐 Sign in callback triggered for:', user.email);
-        
-        // Call backend to store user info
-        const response = await fetch("http://localhost:5000/api/auth/users", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: user.name,
-            email: user.email,
-            profile_picture: user.image,
-          }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          console.error('❌ Backend API error:', errorData);
-          throw new Error(`Backend error: ${errorData.error || response.statusText}`);
+    async jwt({ token, account }) {
+      // On first sign in, fetch user_id from backend using Google idToken
+      if (account?.id_token && !token.user_id) {
+        try {
+          const res = await fetch(`${process.env.BACKEND_URL}/api/auth/google`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ idToken: account.id_token }),
+          });
+          const data = await res.json();
+          token.user_id = data.user_id;  // Store backend user_id in token
+        } catch (error) {
+          console.error("Failed to fetch backend user_id:", error);
         }
-
-        const result = await response.json();
-        console.log('✅ User saved to database:', result);
-        return true;
-      } catch (error) {
-        console.error('❌ Error saving user to database:', error);
-        // Still allow sign in even if database save fails
-        return true;
-      }
-    },
-    async session({ session, token, user }) {
-      // Add user ID to session if available
-      if (token?.sub) {
-        session.user.id = token.sub;
-      }
-      return session;
-    },
-    async jwt({ token, user, account, profile }) {
-      // Add user info to JWT token
-      if (user) {
-        token.userId = user.id;
       }
       return token;
     },
+
+    async session({ session, token }) {
+      // Attach the backend user_id to the session object accessible on frontend
+      session.user.user_id = token.user_id || null;
+      return session;
+    },
+
     async redirect({ url, baseUrl }) {
-      return "/home";
+      return "/home"; // Redirect after login
     },
   },
-  debug: process.env.NODE_ENV === 'development',
+  pages: {
+    signIn: "/auth/signin", // Optional custom signin page
+  },
+  debug: process.env.NODE_ENV === "development",
 };
 
 const handler = NextAuth(authOptions);

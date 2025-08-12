@@ -1,11 +1,9 @@
 const express = require('express');
-const { googleAuth } = require('../controllers/authController');
 const { upsertUser } = require('../controllers/userController');
 
 const router = express.Router();
 
-router.post('/google', googleAuth);
-
+// POST /api/auth/users - upsert user (you can also remove this if you upsert inside googleAuth)
 router.post('/users', async (req, res) => {
   try {
     const user = await upsertUser(req.body);
