@@ -180,133 +180,97 @@ export default function HomePage() {
 	}
 
 	return (
-		<div className="min-h-screen bg-gray-50 flex">
-			{/* Left Sidebar - Navigation */}
-			<div className="w-80 bg-white border-r border-gray-200 p-6">
-				<div className="mb-6">
-					<nav className="space-y-2">
-						{[
-							{ name: "Goals", icon: "🎯" },
-							{ name: "Daily Plan", icon: "📅" },
-							{ name: "Tasks", icon: "✅" },
-							{ name: "Quizzes", icon: "📝" },
-							{ name: "Progress", icon: "📊" },
-							{ name: "AI Feedback", icon: "🤖" },
-							{ name: "Settings", icon: "⚙️" }
-						].map((item, index) => (
-							<a
-								key={index}
-								href="#"
-								className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
-									item.name === "Goals" 
-										? "text-gray-600 bg-gray-100" 
-										: "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-								}`}
-							>
-								<span className="text-lg">{item.icon}</span>
-								<span className="text-sm font-medium">{item.name}</span>
-							</a>
-						))}
-					</nav>
+		<div className="p-6">
+			<div className="max-w-6xl mx-auto">
+				{/* Header Section */}
+				<div className="mb-8">
+					<h1 className="text-3xl font-semibold text-gray-900 mb-2">Your Learning Goals</h1>
+					<p className="text-gray-600">Define and organize your learning objectives to stay on track.</p>
 				</div>
-			</div>
 
-			{/* Main Content Area */}
-			<div className="flex-1 flex flex-col">
-				{/* Main Content */}
-				<div className="flex-1 p-6">
-					<div className="max-w-6xl mx-auto">
-						{/* Header Section */}
-						<div className="mb-8">
-							<h1 className="text-3xl font-semibold text-gray-900 mb-2">Your Learning Goals</h1>
-							<p className="text-gray-600">Define and organize your learning objectives to stay on track.</p>
+				{/* Stats Section */}
+				<div className="flex items-center justify-between mb-5">
+					<div className="flex space-x-4">
+						<div className="text-center bg-gray-100 rounded-lg p-3">
+							<div className="text-2xl text-gray-900">{goals.length}</div>
+							<div className="text-sm text-gray-600">Total Goals</div>
 						</div>
-
-						{/* Stats Section */}
-						<div className="flex items-center justify-between mb-5">
-							<div className="flex space-x-4">
-								<div className="text-center bg-gray-100 rounded-lg p-3">
-									<div className="text-2xl text-gray-900">{goals.length}</div>
-									<div className="text-sm text-gray-600">Total Goals</div>
-								</div>
-								<div className="text-center bg-gray-100 rounded-lg p-3">
-									<div className="text-2xl text-gray-900">{goals.filter(g => g.status !== 'done').length}</div>
-									<div className="text-sm text-gray-600">Active Goals</div>
-								</div>
-								<div className="text-center bg-gray-100 rounded-lg p-3">
-									<div className="text-2xl text-gray-900">{goals.filter(g => g.status === 'done').length}</div>
-									<div className="text-sm text-gray-600">Completed</div>
-								</div>
-							</div>
-							<button 
-								onClick={() => setCreateModalOpen(true)}
-								className="bg-teal-500 hover:bg-teal-600 text-white px-6 py-3 rounded-lg font-medium transition-colors cursor-pointer"
-							>
-								Create New Goal
-							</button>
+						<div className="text-center bg-gray-100 rounded-lg p-3">
+							<div className="text-2xl text-gray-900">{goals.filter(g => g.status !== 'done').length}</div>
+							<div className="text-sm text-gray-600">Active Goals</div>
 						</div>
-
-						{/* Error Message */}
-						{error && (
-							<div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-								<p className="text-red-600">{error}</p>
-							</div>
-						)}
-
-						{/* Study Goals Grid */}
-						{goals.length === 0 ? (
-							<div className="text-center py-12">
-								<div className="text-6xl mb-4">🎯</div>
-								<h3 className="text-xl font-semibold text-gray-900 mb-2">No goals yet</h3>
-								<p className="text-gray-600 mb-6">Start by creating your first learning goal</p>
-								<button 
-									onClick={() => setCreateModalOpen(true)}
-									className="bg-teal-500 hover:bg-teal-600 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-								>
-									Create Your First Goal
-								</button>
-							</div>
-						) : (
-							<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-								{goals.map((goal) => (
-									<div key={goal.goal_id} className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow">
-										<div className="flex items-start justify-between mb-4">
-											<div className="text-3xl">{getGoalEmoji(goal.title)}</div>
-											<span className={`px-3 py-1 rounded-full text-xs font-medium ${getDifficultyColor(goal.difficulty_level)}`}>
-												{goal.difficulty_level || 'Not Set'}
-											</span>
-										</div>
-										<h3 className="text-lg font-semibold text-gray-900 mb-2">{goal.title}</h3>
-										<p className="text-gray-600 text-sm mb-4 line-clamp-3">{goal.description || 'No description provided'}</p>
-										<div className="text-xs text-gray-500 mb-4">
-											{formatDates(goal.start_date, goal.end_date)}
-										</div>
-										<div className="flex space-x-2">
-											<button 
-												onClick={() => handleViewGoal(goal)}
-												className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 rounded text-sm font-medium transition-colors cursor-pointer"
-											>
-												View Details
-											</button>
-											<button 
-												onClick={() => handleEditGoal(goal)}
-												className="flex-1 bg-gray-50 hover:bg-gray-100 text-gray-700 px-3 py-2 rounded text-sm font-medium transition-colors cursor-pointer"
-											>
-												Edit
-											</button>
-											<button 
-												onClick={() => handleDeleteGoal(goal.goal_id)}
-												className="flex-1 bg-red-50 hover:bg-red-100 text-red-700 px-3 py-2 rounded text-sm font-medium transition-colors cursor-pointer"
-											>
-												Delete
-											</button>
-										</div>
-									</div>
-								))}
-							</div>
-						)}
+						<div className="text-center bg-gray-100 rounded-lg p-3">
+							<div className="text-2xl text-gray-900">{goals.filter(g => g.status === 'done').length}</div>
+							<div className="text-sm text-gray-600">Completed</div>
+						</div>
 					</div>
+					<button 
+						onClick={() => setCreateModalOpen(true)}
+						className="bg-teal-500 hover:bg-teal-600 text-white px-6 py-3 rounded-lg font-medium transition-colors cursor-pointer"
+					>
+						Create New Goal
+					</button>
 				</div>
+
+				{/* Error Message */}
+				{error && (
+					<div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+						<p className="text-red-600">{error}</p>
+					</div>
+				)}
+
+				{/* Study Goals Grid */}
+				{goals.length === 0 ? (
+					<div className="text-center py-12">
+						<div className="text-6xl mb-4">🎯</div>
+						<h3 className="text-xl font-semibold text-gray-900 mb-2">No goals yet</h3>
+						<p className="text-gray-600 mb-6">Start by creating your first learning goal</p>
+						<button 
+							onClick={() => setCreateModalOpen(true)}
+							className="bg-teal-500 hover:bg-teal-600 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+						>
+							Create Your First Goal
+						</button>
+					</div>
+				) : (
+					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+						{goals.map((goal) => (
+							<div key={goal.goal_id} className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow h-80 flex flex-col">
+								<div className="flex items-start justify-between mb-4">
+									<div className="text-3xl">{getGoalEmoji(goal.title)}</div>
+									<span className={`px-3 py-1 rounded-full text-xs font-medium ${getDifficultyColor(goal.difficulty_level)}`}>
+										{goal.difficulty_level || 'Not Set'}
+									</span>
+								</div>
+								<h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">{goal.title}</h3>
+								<p className="text-gray-600 text-sm mb-4 line-clamp-3 flex-1">{goal.description || 'No description provided'}</p>
+								<div className="text-xs text-gray-500 mb-4">
+									{formatDates(goal.start_date, goal.end_date)}
+								</div>
+								<div className="flex space-x-2 mt-auto">
+									<button 
+										onClick={() => handleViewGoal(goal)}
+										className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 rounded text-sm font-medium transition-colors cursor-pointer"
+									>
+										View Details
+									</button>
+									<button 
+										onClick={() => handleEditGoal(goal)}
+										className="flex-1 bg-gray-50 hover:bg-gray-100 text-gray-700 px-3 py-2 rounded text-sm font-medium transition-colors cursor-pointer"
+									>
+										Edit
+									</button>
+									<button 
+										onClick={() => handleDeleteGoal(goal.goal_id)}
+										className="flex-1 bg-red-50 hover:bg-red-100 text-red-700 px-3 py-2 rounded text-sm font-medium transition-colors cursor-pointer"
+									>
+										Delete
+									</button>
+								</div>
+							</div>
+						))}
+					</div>
+				)}
 			</div>
 
 			{/* Modals */}
