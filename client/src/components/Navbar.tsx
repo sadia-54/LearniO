@@ -5,10 +5,12 @@ import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Logo from './Logo';
+import { useSearch } from '@/context/SearchContext';
 
 export default function Navbar() {
   const { data: session } = useSession();
   const pathname = usePathname();
+  const { searchTerm, setSearchTerm } = useSearch();
 
   const navigationItems = [
     { name: "Goals", href: "/home" },
@@ -57,11 +59,13 @@ export default function Navbar() {
 
         {/* Right side - Search, User Profile, Logout */}
         <div className="flex items-center space-x-4">
-          {/* Search Bar */}
+          {/* Search Bar using context */}
           <div className="relative">
             <input
               type="text"
               placeholder="Search your study goals..."
+              value={searchTerm}               // <-- controlled input
+              onChange={(e) => setSearchTerm(e.target.value)} // <-- update context
               className="w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-600 focus:border-transparent bg-transparent text-white placeholder-white"
             />
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">

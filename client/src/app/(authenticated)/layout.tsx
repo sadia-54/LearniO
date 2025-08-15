@@ -1,6 +1,7 @@
 import React from 'react';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
+import { SearchProvider } from '@/context/SearchContext';
 
 export default function AuthenticatedLayout({
   children,
@@ -8,6 +9,7 @@ export default function AuthenticatedLayout({
   children: React.ReactNode;
 }) {
   return (
+    <SearchProvider>
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       <div className="flex">
@@ -17,5 +19,6 @@ export default function AuthenticatedLayout({
         </main>
       </div>
     </div>
+    </SearchProvider>
   );
 }
