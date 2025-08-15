@@ -146,9 +146,46 @@ export default function HomePage() {
   );
 
   return (
-    <div className="p-6">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-semibold text-gray-900 mb-6">Your Learning Goals</h1>
+
+
+        <div className="p-6">
+			<div className="max-w-6xl mx-auto">
+				{/* Header Section */}
+				<div className="mb-8">
+					<h1 className="text-3xl font-semibold text-gray-900 mb-2">Your Learning Goals</h1>
+					<p className="text-gray-600">Define and organize your learning objectives to stay on track.</p>
+				</div>
+
+        {/* Stats Section */}
+				<div className="flex items-center justify-between mb-5">
+					<div className="flex space-x-4">
+						<div className="text-center bg-gray-100 rounded-lg p-3">
+							<div className="text-2xl text-gray-900">{goals.length}</div>
+							<div className="text-sm text-gray-600">Total Goals</div>
+						</div>
+						<div className="text-center bg-gray-100 rounded-lg p-3">
+							<div className="text-2xl text-gray-900">{goals.filter(g => g.status !== 'done').length}</div>
+							<div className="text-sm text-gray-600">Active Goals</div>
+						</div>
+            <div className="text-center bg-gray-100 rounded-lg p-3">
+							<div className="text-2xl text-gray-900">{goals.filter(g => g.status === 'done').length}</div>
+							<div className="text-sm text-gray-600">Completed</div>
+						</div>
+					</div>
+					<button 
+						onClick={() => setCreateModalOpen(true)}
+						className="bg-teal-500 hover:bg-teal-600 text-white px-6 py-3 rounded-lg font-medium transition-colors cursor-pointer"
+					>
+						Create New Goal
+					</button>
+				</div>
+        
+        {/* Error Message */}
+				{error && (
+					<div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+						<p className="text-red-600">{error}</p>
+					</div>
+				)}
 
         {/* Render filtered goals directly */}
         {filteredGoals.length === 0 ? (
