@@ -41,9 +41,34 @@ async function updateGoal(goalId, updateData) {
 }
 
 async function deleteGoal(goalId) {
-  await prisma.studyGoals.delete({
-    where: { goal_id: goalId },
+  // Delete dependent records in a transaction to satisfy FK constraints
+  await prisma.$transaction(async (tx) => {
+    // Gather all task IDs under this goal via related plans
+    const tasks = await tx.tasks.findMany({
+      where: { plan: { goal: { goal_id: goalId } } },
+      select: { task_id: true },
+    });
+    const taskIds = tasks.map(t => t.task_id);
+
+    if (taskIds.length > 0) {
+      // Answers -> Questions -> Quizzes linked to these tasks
+      await tx.answers.deleteMany({ where: { question: { quiz: { task_id: { in: taskIds } } } } });
+      await tx.questions.deleteMany({ where: { quiz: { task_id: { in: taskIds } } } });
+      await tx.quizzes.deleteMany({ where: { task_id: { in: taskIds } } });
+      // Notifications and AIRecommendations that reference these tasks
+      await tx.notifications.deleteMany({ where: { task_id: { in: taskIds } } });
+      await tx.aIRecommendations.deleteMany({ where: { task_id: { in: taskIds } } });
+      // Finally, delete the tasks
+      await tx.tasks.deleteMany({ where: { task_id: { in: taskIds } } });
+    }
+
+    // Delete plans for this goal
+    await tx.dailyPlans.deleteMany({ where: { goal_id: goalId } });
+
+    // Delete the goal itself
+    await tx.studyGoals.delete({ where: { goal_id: goalId } });
   });
+
   return { success: true };
 }
 

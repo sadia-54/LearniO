@@ -1,4 +1,5 @@
 const goalsService = require('../services/goalService');
+const { generatePlansForGoalRange, generateAndSaveFullTimeline } = require('../services/dailyPlanService');
 
 exports.createGoal = async (req, res) => {
   try {
@@ -10,7 +11,26 @@ exports.createGoal = async (req, res) => {
     }
 
     const newGoal = await goalsService.createGoal(goalData);
-    res.status(201).json(newGoal);
+
+    // Fire-and-forget: prefer single AI call for full timeline, fallback to per-day range
+    if (newGoal?.goal_id && goalData.user_id) {
+      (async () => {
+        try {
+          const summary = await generateAndSaveFullTimeline(newGoal.goal_id, goalData.user_id);
+          console.log('Generated full-timeline plans for new goal:', newGoal.goal_id, summary);
+        } catch (e) {
+          console.warn('Full-timeline generation failed, falling back to per-day:', e?.message || e);
+          try {
+            const summary = await generatePlansForGoalRange(newGoal.goal_id, goalData.user_id);
+            console.log('Generated plans (per-day fallback) for new goal:', newGoal.goal_id, summary);
+          } catch (e2) {
+            console.error('Failed generating plans for new goal:', e2);
+          }
+        }
+      })();
+    }
+
+    res.status(201).json({ goal: newGoal });
   } catch (error) {
     console.error("Failed to create goal:", error);
     res.status(500).json({ error: "Failed to create goal" });

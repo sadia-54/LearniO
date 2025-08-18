@@ -8,6 +8,7 @@ import GoalEditModal from '@/components/GoalEditModal';
 import CreateGoalModal from '@/components/CreateGoalModal';
 import { useSearch } from "@/context/SearchContext";
 import { filterGoals } from "@/utils/goalSearch";
+import { useRouter } from 'next/navigation';
 
 interface Goal {
   goal_id: string;
@@ -22,6 +23,7 @@ interface Goal {
 export default function HomePage() {
   const { data: session } = useSession();
   const { searchTerm } = useSearch(); // get searchTerm from context
+  const router = useRouter();
 
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -128,6 +130,8 @@ export default function HomePage() {
       const createdGoal: Goal = response.data.goal ?? response.data;
       setGoals(prev => [createdGoal, ...prev]);
       setCreateModalOpen(false);
+      // Navigate to plan page for this goal where plans will appear
+      router.push(`/plan/${createdGoal.goal_id}`);
     } catch (err) { console.error(err); }
   };
   const handleDeleteGoal = async (goalId: string) => {

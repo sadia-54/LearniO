@@ -1,7 +1,7 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
-require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -31,9 +31,13 @@ app.use(passport.initialize());
 // Routes
 const authRoutes = require('./routes/authRoutes');
 const goalsRoutes = require('./routes/goalsRoutes');
+const dailyPlanRoutes = require('./routes/dailyPlanRoutes');
+const studyRoutes = require('./routes/studyRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/goals', goalsRoutes);
+app.use('/api', dailyPlanRoutes);
+app.use('/api/study', studyRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -49,4 +53,5 @@ app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
   console.log(`🌐 CORS origin: ${process.env.CLIENT_URL || 'http://localhost:3000'}`);
+  console.log(`🤖 Gemini AI: ${process.env.GEMINI_API_KEY ? 'Configured' : 'Not configured'}`);
 });
