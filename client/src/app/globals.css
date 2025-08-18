@@ -119,4 +119,11 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* Ensure all buttons use a pointer cursor; disabled shows not-allowed */
+  button {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
 }

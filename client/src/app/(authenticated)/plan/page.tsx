@@ -185,8 +185,20 @@ export default function DailyPlansPage() {
                       )}
                     </div>
                     <div className="mt-3 flex space-x-2">
-                      <button onClick={() => handleTaskAction(task.task_id, 'complete')} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded text-xs font-medium">Complete</button>
-                      <button onClick={() => handleTaskAction(task.task_id, 'start')} className="flex-1 bg-teal-500 hover:bg-teal-600 text-white px-3 py-2 rounded text-xs font-medium">Start</button>
+                      <button
+                        onClick={() => handleTaskAction(task.task_id, 'complete')}
+                        className="flex-1 inline-flex items-center justify-center gap-2 border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-md text-sm font-medium"
+                      >
+                        <span>✔</span>
+                        <span>Complete</span>
+                      </button>
+                      <button
+                        onClick={() => handleTaskAction(task.task_id, 'start')}
+                        className="flex-1 inline-flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                      >
+                        <span>▶</span>
+                        <span>Start Task</span>
+                      </button>
                     </div>
                   </div>
                 ))}

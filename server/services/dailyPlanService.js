@@ -106,7 +106,7 @@ async function generateAndSaveDailyPlan(goalId, userId, targetDate) {
       data: {
         goal_id: goalId,
         date: new Date(aiGeneratedPlan.date),
-        status: 'pending',
+    status: 'pending',
       },
     });
 
@@ -149,12 +149,11 @@ async function generateAndSaveDailyPlan(goalId, userId, targetDate) {
       }
     }
 
-    // Return the complete plan with tasks
-    return {
-      plan: dailyPlan,
-      tasks: tasks,
-      timeBlocks: aiGeneratedPlan.timeBlocks,
-    };
+  // Recalc and persist plan status after creating tasks
+  try { await recalcPlanStatus(dailyPlan.plan_id); } catch {}
+
+  // Return the complete plan with tasks
+  return { plan: dailyPlan, tasks: tasks, timeBlocks: aiGeneratedPlan.timeBlocks };
   } catch (error) {
   console.error('Error generating and saving daily plan:', error?.message || error);
     throw error;
@@ -211,6 +210,25 @@ async function createDailyPlan(planData) {
   return newPlan;
 }
 
+async function recalcPlanStatus(planId) {
+  // Fetch all tasks for the plan
+  const tasks = await prisma.tasks.findMany({
+    where: { plan_id: planId },
+    select: { status: true },
+  });
+
+  let newStatus = 'pending';
+  if (tasks.length > 0) {
+    const incompleteCount = tasks.filter(t => t.status === 'incomplete').length;
+    if (incompleteCount === 0) newStatus = 'done';
+    else if (incompleteCount === tasks.length) newStatus = 'pending';
+    else newStatus = 'in_progress';
+  }
+
+  await prisma.dailyPlans.update({ where: { plan_id: planId }, data: { status: newStatus } });
+  return newStatus;
+}
+
 async function updateTaskStatus(taskId, status) {
   const updatedTask = await prisma.tasks.update({
     where: { task_id: taskId },
@@ -218,7 +236,16 @@ async function updateTaskStatus(taskId, status) {
       status: status,
       completed_at: status === 'complete' ? new Date() : null,
     },
+    select: { task_id: true, plan_id: true, status: true, completed_at: true, title: true, description: true, type: true, estimated_duration: true, resource_url: true },
   });
+
+  // Recalculate parent plan status
+  try {
+    await recalcPlanStatus(updatedTask.plan_id);
+  } catch (e) {
+    console.warn('Failed to recalc plan status for plan', updatedTask.plan_id, e?.message || e);
+  }
+
   return updatedTask;
 }
 
@@ -359,6 +386,9 @@ async function generateAndSaveFullTimeline(goalId, userId) {
       });
       tasksCreated += 1;
     }
+
+  // Recalc status for this plan after tasks are created
+  try { await recalcPlanStatus(plan.plan_id); } catch {}
   }
 
   return { created, updated, tasksCreated };

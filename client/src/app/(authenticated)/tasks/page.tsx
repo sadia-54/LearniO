@@ -80,13 +80,31 @@ export default function TasksPage() {
               </div>
               <div className="flex space-x-2">
                 {task.status !== 'complete' && (
-                  <button onClick={() => updateTaskMutation.mutate({ taskId: task.task_id, status: 'complete' })} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded text-xs font-medium">Mark Complete</button>
+                  <button
+                    onClick={() => updateTaskMutation.mutate({ taskId: task.task_id, status: 'complete' })}
+                    className="flex-1 inline-flex items-center justify-center gap-2 border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-md text-sm font-medium"
+                  >
+                    <span>✔</span>
+                    <span>Complete</span>
+                  </button>
                 )}
                 {task.status !== 'skipped' && (
-                  <button onClick={() => updateTaskMutation.mutate({ taskId: task.task_id, status: 'skipped' })} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded text-xs font-medium">Skip</button>
+                  <button
+                    onClick={() => updateTaskMutation.mutate({ taskId: task.task_id, status: 'skipped' })}
+                    className="flex-1 inline-flex items-center justify-center gap-2 border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-md text-sm font-medium"
+                  >
+                    <span>↷</span>
+                    <span>Skip Task</span>
+                  </button>
                 )}
                 {task.status !== 'incomplete' && (
-                  <button onClick={() => updateTaskMutation.mutate({ taskId: task.task_id, status: 'incomplete' })} className="flex-1 bg-teal-500 hover:bg-teal-600 text-white px-3 py-2 rounded text-xs font-medium">Mark Pending</button>
+                  <button
+                    onClick={() => updateTaskMutation.mutate({ taskId: task.task_id, status: 'incomplete' })}
+                    className="flex-1 inline-flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                  >
+                    <span>▶</span>
+                    <span>Mark Pending</span>
+                  </button>
                 )}
               </div>
             </div>
