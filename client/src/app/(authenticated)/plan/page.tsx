@@ -169,7 +169,7 @@ export default function DailyPlansPage() {
                   {plan.status.replace('_', ' ')}
                 </span>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 {plan.tasks.map(task => (
                   <div key={task.task_id} className="border border-gray-200 rounded-lg p-4">
                     <div className="flex items-start justify-between mb-2">

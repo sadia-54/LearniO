@@ -22,5 +22,8 @@ router.post('/daily-plans', dailyPlanController.createDailyPlan);
  
  // Fetch all user plans by date
  router.get('/users/:userId/daily-plans', dailyPlanController.getUserPlansByDate);
+ 
+ // Fetch all tasks for user (optional ?status=incomplete|complete|skipped)
+ router.get('/users/:userId/tasks', dailyPlanController.getTasksByUser);
 
 module.exports = router;

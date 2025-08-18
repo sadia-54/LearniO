@@ -243,7 +243,6 @@ async function getTodayPlan(goalId) {
           task_id: true,
           title: true,
           description: true,
-          type: true,
           estimated_duration: true,
           resource_url: true,
           status: true,
@@ -256,6 +255,33 @@ async function getTodayPlan(goalId) {
   return todayPlan;
 }
 
+// Fetch all tasks for a user across all goals (optional status filter)
+async function getTasksByUser(userId, status) {
+  const whereClause = {
+    plan: { goal: { user_id: userId } },
+    ...(status ? { status } : {}),
+  };
+
+  const tasks = await prisma.tasks.findMany({
+    where: whereClause,
+    include: {
+      plan: {
+        select: {
+          plan_id: true,
+          date: true,
+          goal: { select: { goal_id: true, title: true } },
+        },
+      },
+    },
+    orderBy: [
+      { plan: { date: 'desc' } },
+      { title: 'asc' },
+    ],
+  });
+
+  return tasks;
+}
+
 module.exports = { 
   getDailyPlansByGoalId, 
   getUserPlansByDate,
@@ -263,7 +289,8 @@ module.exports = {
   generateAndSaveDailyPlan,
   generatePlansForGoalRange,
   updateTaskStatus,
-  getTodayPlan
+  getTodayPlan,
+  getTasksByUser,
 };
 
 /**

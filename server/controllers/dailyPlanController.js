@@ -100,3 +100,15 @@ exports.createDailyPlan = async (req, res) => {
     res.status(500).json({ error: 'Failed to create daily plan' });
   }
 };
+
+exports.getTasksByUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { status } = req.query; // optional: incomplete|complete|skipped
+    const tasks = await dailyPlanService.getTasksByUser(userId, status);
+    res.status(200).json({ tasks });
+  } catch (error) {
+    console.error('Error fetching user tasks:', error);
+    res.status(500).json({ error: 'Failed to fetch tasks' });
+  }
+};
