@@ -2,7 +2,7 @@
 import { useState, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import axios from "axios";
+import api from "@/lib/api";
 
 type Task = {
   task_id: string;
@@ -25,7 +25,7 @@ export default function QuizzesPage() {
   const { data: tasksRes, isLoading } = useQuery<{ tasks: Task[] }>({
     queryKey: ["user-tasks", userId],
     queryFn: async () => {
-      const res = await axios.get(`http://localhost:5000/api/users/${userId}/tasks`);
+  const res = await api.get(`/api/users/${userId}/tasks`);
       return res.data;
     },
     enabled: !!userId,
@@ -60,7 +60,7 @@ export default function QuizzesPage() {
 
   const genQuiz = useMutation({
     mutationFn: async (taskId: string) => {
-      const res = await axios.get(`http://localhost:5000/api/quizzes/from-task/${taskId}`, { params: { count: 12 } });
+  const res = await api.get(`/api/quizzes/from-task/${taskId}`, { params: { count: 12 } });
       return res.data as Quiz;
     },
     onMutate: (taskId: string) => {
@@ -87,7 +87,7 @@ export default function QuizzesPage() {
         user_id: userId,
         answers: Object.entries(answers).map(([question_id, selected_option]) => ({ question_id, selected_option })),
       };
-      const res = await axios.post(`http://localhost:5000/api/quizzes/${activeQuiz.quiz_id}/submit`, payload);
+  const res = await api.post(`/api/quizzes/${activeQuiz.quiz_id}/submit`, payload);
       return res.data as { score: number; total: number; correct: number };
     },
     onSuccess: (data) => {

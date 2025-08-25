@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '@/lib/api';
 
 interface Goal {
   goal_id: string;
@@ -54,7 +54,7 @@ export default function GoalEditModal({ isOpen, onClose, goal, onSave }: GoalEdi
     setError(null);
 
     try {
-      const response = await axios.put(`http://localhost:5000/api/goals/${goal.goal_id}`, formData);
+  const response = await api.put(`/api/goals/${goal.goal_id}`, formData);
       
       if (response.status === 200) {
         const updatedGoal = { ...goal, ...formData };

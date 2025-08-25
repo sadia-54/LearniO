@@ -14,7 +14,7 @@ const authOptions = {
         console.log('🔐 Sign in callback triggered for:', user.email);
         
         // Call backend to store user info
-        const response = await fetch("http://localhost:5000/api/auth/users", {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'}/api/auth/users`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

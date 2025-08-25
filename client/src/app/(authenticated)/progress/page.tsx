@@ -1,6 +1,6 @@
 "use client";
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
+import api from '@/lib/api';
 import { useSession } from "next-auth/react";
 
 type Overview = { totalTasksCompleted: number; activeGoals: number; weeklyStudyHours: number };
@@ -169,7 +169,7 @@ export default function ProgressPage() {
   const { data, isLoading, error } = useQuery<Summary>({
     queryKey: ["progress-summary", session?.user?.user_id],
     queryFn: async () => {
-      const res = await axios.get(`http://localhost:5000/api/progress/${session!.user.user_id}/summary`);
+  const res = await api.get(`/api/progress/${session!.user.user_id}/summary`);
       return res.data;
     },
     enabled: !!session?.user?.user_id,
@@ -180,7 +180,7 @@ export default function ProgressPage() {
   const { data: skippedTasks } = useQuery<{ tasks: TaskWithPlan[] }>({
     queryKey: ["skipped-tasks", session?.user?.user_id],
     queryFn: async () => {
-      const res = await axios.get(`http://localhost:5000/api/users/${session!.user.user_id}/tasks`, { params: { status: "skipped" } });
+  const res = await api.get(`/api/users/${session!.user.user_id}/tasks`, { params: { status: "skipped" } });
       return res.data;
     },
     enabled: !!session?.user?.user_id,
@@ -190,7 +190,7 @@ export default function ProgressPage() {
   const { data: completedTasks } = useQuery<{ tasks: TaskWithPlan[] }>({
     queryKey: ["completed-tasks", session?.user?.user_id],
     queryFn: async () => {
-      const res = await axios.get(`http://localhost:5000/api/users/${session!.user.user_id}/tasks`, { params: { status: "complete" } });
+  const res = await api.get(`/api/users/${session!.user.user_id}/tasks`, { params: { status: "complete" } });
       return res.data;
     },
     enabled: !!session?.user?.user_id,

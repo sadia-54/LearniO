@@ -1,6 +1,6 @@
 "use client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import api from "@/lib/api";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useState } from "react";
@@ -45,7 +45,7 @@ export default function FeedbackPage() {
   const { data, isLoading, error } = useQuery<Summary>({
     queryKey: ["progress-summary", session?.user?.user_id],
     queryFn: async () => {
-      const res = await axios.get(`http://localhost:5000/api/progress/${session!.user.user_id}/summary`);
+  const res = await api.get(`/api/progress/${session!.user.user_id}/summary`);
       return res.data;
     },
     enabled: !!session?.user?.user_id,
@@ -54,7 +54,7 @@ export default function FeedbackPage() {
   const { data: recsData, isLoading: recsLoading } = useQuery<{ recommendations: Recommendation[]}>({
     queryKey: ["ai-recommendations", session?.user?.user_id],
     queryFn: async () => {
-      const res = await axios.get(`http://localhost:5000/api/users/${session!.user.user_id}/recommendations`);
+  const res = await api.get(`/api/users/${session!.user.user_id}/recommendations`);
       return res.data;
     },
     enabled: !!session?.user?.user_id,
@@ -62,7 +62,7 @@ export default function FeedbackPage() {
 
   const generateMutation = useMutation({
     mutationFn: async () => {
-      const res = await axios.post(`http://localhost:5000/api/users/${session!.user.user_id}/recommendations/generate`);
+  const res = await api.post(`/api/users/${session!.user.user_id}/recommendations/generate`);
       return res.data;
     },
     onSuccess: () => {
@@ -72,7 +72,7 @@ export default function FeedbackPage() {
 
   const chatMutation = useMutation<{ answer: string }, unknown, string>({
     mutationFn: async (prompt: string) => {
-      const res = await axios.post(`http://localhost:5000/api/users/${session!.user.user_id}/chat`, { prompt });
+  const res = await api.post(`/api/users/${session!.user.user_id}/chat`, { prompt });
       return res.data;
     },
     onSuccess: (res) => setChatAnswer(res.answer),

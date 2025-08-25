@@ -1,6 +1,6 @@
 "use client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import api from "@/lib/api";
 import { useSession } from "next-auth/react";
 import { useMemo, useState } from "react";
 
@@ -24,7 +24,7 @@ export default function TasksPage() {
     queryKey: ["userTasks", session?.user?.user_id, filter],
     queryFn: async () => {
       const qs = filter === "all" ? "" : `?status=${filter}`;
-      const res = await axios.get(`http://localhost:5000/api/users/${session!.user.user_id}/tasks${qs}`);
+  const res = await api.get(`/api/users/${session!.user.user_id}/tasks${qs}`);
       return res.data;
     },
     enabled: !!session?.user?.user_id,
@@ -39,14 +39,14 @@ export default function TasksPage() {
 
   const updateTaskMutation = useMutation({
     mutationFn: async ({ taskId, status }: { taskId: string; status: "incomplete" | "complete" | "skipped" }) => {
-      const res = await axios.put(`http://localhost:5000/api/tasks/${taskId}/status`, { status });
+  const res = await api.put(`/api/tasks/${taskId}/status`, { status });
       return res.data;
     },
     onSuccess: async () => {
       // Recompute and persist Progress on the server from current Tasks
       if (session?.user?.user_id) {
         try {
-          await axios.post(`http://localhost:5000/api/users/${session.user.user_id}/progress/recompute`);
+          await api.post(`/api/users/${session.user.user_id}/progress/recompute`);
         } catch {}
       }
       // Refresh local caches

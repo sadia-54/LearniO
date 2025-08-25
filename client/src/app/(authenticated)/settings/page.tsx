@@ -1,7 +1,7 @@
 "use client";
 import { signOut, useSession } from "next-auth/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import api from "@/lib/api";
 
 type Settings = {
   email_reminder: boolean;
@@ -25,12 +25,12 @@ export default function SettingsPage() {
 
   const { data, isLoading, error } = useQuery<{ settings: Settings}>({
     queryKey: ["settings", session?.user?.user_id],
-    queryFn: async () => (await axios.get(`http://localhost:5000/api/users/${session!.user.user_id}/settings`)).data,
+  queryFn: async () => (await api.get(`/api/users/${session!.user.user_id}/settings`)).data,
     enabled: !!session?.user?.user_id,
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (updates: Partial<Settings>) => (await axios.put(`http://localhost:5000/api/users/${session!.user.user_id}/settings`, updates)).data,
+  mutationFn: async (updates: Partial<Settings>) => (await api.put(`/api/users/${session!.user.user_id}/settings`, updates)).data,
     onSuccess: () => qc.invalidateQueries({ queryKey: ["settings", session?.user?.user_id] }),
   });
 
@@ -163,7 +163,7 @@ export default function SettingsPage() {
                     const input = window.prompt('Please type DELETE to confirm:');
                     if (input !== 'DELETE') return;
                     try {
-                      await axios.delete(`http://localhost:5000/api/users/${session!.user.user_id}`);
+                      await api.delete(`/api/users/${session!.user.user_id}`);
                       // Sign out after deletion
                       await signOut({ callbackUrl: '/' });
                     } catch (e) { alert('Failed to delete account.'); }

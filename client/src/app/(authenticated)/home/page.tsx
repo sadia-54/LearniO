@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '@/lib/api';
 import { useSession } from 'next-auth/react';
 import GoalViewModal from '@/components/GoalViewModal';
 import GoalEditModal from '@/components/GoalEditModal';
@@ -42,7 +42,7 @@ export default function HomePage() {
 
       try {
         setLoading(true);
-        const response = await axios.get(`http://localhost:5000/api/goals/user/${session.user.user_id}`);
+  const response = await api.get(`/api/goals/user/${session.user.user_id}`);
         setGoals(response.data.goals);
         setError(null);
       } catch (err) {
@@ -126,7 +126,7 @@ export default function HomePage() {
     if (!session?.user?.user_id) return;
     try {
       const payload = { ...formData, user_id: session.user.user_id } as any;
-      const response = await axios.post('http://localhost:5000/api/goals', payload);
+  const response = await api.post('/api/goals', payload);
       const createdGoal: Goal = response.data.goal ?? response.data;
       setGoals(prev => [createdGoal, ...prev]);
       setCreateModalOpen(false);
@@ -136,7 +136,7 @@ export default function HomePage() {
   };
   const handleDeleteGoal = async (goalId: string) => {
     if (!confirm('Are you sure you want to delete this goal?')) return;
-    try { await axios.delete(`http://localhost:5000/api/goals/${goalId}`); setGoals(prev => prev.filter(g => g.goal_id !== goalId)); } 
+  try { await api.delete(`/api/goals/${goalId}`); setGoals(prev => prev.filter(g => g.goal_id !== goalId)); } 
     catch (err) { console.error(err); }
   };
 

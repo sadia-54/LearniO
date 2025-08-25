@@ -1,6 +1,6 @@
 "use client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import api from "@/lib/api";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
@@ -45,7 +45,7 @@ export default function DailyPlansPage() {
   const { data: allPlans, isLoading: plansLoading } = useQuery<DailyPlansResponse>({
     queryKey: ["userDailyPlans", session?.user?.user_id, targetIso],
     queryFn: async () => {
-      const res = await axios.get(`http://localhost:5000/api/users/${session!.user.user_id}/daily-plans?date=${targetIso}`);
+  const res = await api.get(`/api/users/${session!.user.user_id}/daily-plans?date=${targetIso}`);
       return res.data;
     },
     enabled: !!session?.user?.user_id,
@@ -54,7 +54,7 @@ export default function DailyPlansPage() {
   // Update task status mutation
   const updateTaskMutation = useMutation({
     mutationFn: async ({ taskId, status }: { taskId: string; status: string }) => {
-      const res = await axios.put(`http://localhost:5000/api/tasks/${taskId}/status`, { status });
+  const res = await api.put(`/api/tasks/${taskId}/status`, { status });
       return res.data;
     },
     onSuccess: () => {

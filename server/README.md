@@ -1,3 +1,23 @@
+## Server
+
+Express + Prisma API for LearniO.
+
+### Env setup
+
+Copy `.env.example` to `.env` and set:
+
+- PORT, CLIENT_URL
+- DATABASE_URL
+- GEMINI_API_KEY
+- SMTP\_\* (optional)
+
+### Run
+
+- Development: npm run dev
+- Production: npm run start
+
+Health check: GET /health
+
 # Backend Structure & Google OAuth
 
 ## Structure
