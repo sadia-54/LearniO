@@ -40,34 +40,54 @@ async function getOverview(userId) {
 }
 
 async function getMonthlyTaskCompletion(userId, months = 6) {
-  const end = new Date();
-  const start = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth() - (months - 1), 1));
+  const end = new Date(); // now (local)
+  const start = new Date(end.getFullYear(), end.getMonth() - (months - 1), 1); // local month start
   const tasks = await prisma.tasks.findMany({
     where: {
-      status: { in: ['complete', 'skipped'] },
-      plan: {
-        goal: { user_id: userId },
-        date: { gte: start, lte: end },
-      },
+      AND: [
+        { status: { in: ['complete', 'skipped'] } },
+        { plan: { goal: { user_id: userId } } },
+        {
+          OR: [
+            { completed_at: { gte: start, lte: end } },
+            { plan: { date: { gte: start, lte: end } } },
+          ],
+        },
+      ],
     },
-    select: { status: true, plan: { select: { date: true } } },
+    select: { status: true, completed_at: true, plan: { select: { date: true, goal: { select: { goal_id: true } } } } },
   });
 
   const series = new Map();
+  const skippedGoalSets = new Map(); // monthKey -> Set<goal_id>
   // Seed months to zero
   for (let i = months - 1; i >= 0; i--) {
-    const d = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth() - i, 1));
-    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
-    series.set(key, { month: key, completed: 0, skipped: 0 });
+    const d = new Date(end.getFullYear(), end.getMonth() - i, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const label = d.toLocaleString('en-US', { month: 'short' });
+    series.set(key, { month: label, completed: 0, skipped: 0, skippedProjects: 0 });
+    skippedGoalSets.set(key, new Set());
   }
 
   for (const t of tasks) {
-    const d = t.plan?.date ? new Date(t.plan.date) : new Date();
-    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+    // Prefer completed_at for both completed and skipped if present (set when status changes)
+    const baseDate = t.completed_at ? new Date(t.completed_at) : (t.plan?.date ? new Date(t.plan.date) : new Date());
+    const d = baseDate;
+  const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
     const rec = series.get(key);
     if (!rec) continue;
     if (t.status === 'complete') rec.completed += 1;
-    if (t.status === 'skipped') rec.skipped += 1;
+    if (t.status === 'skipped') {
+      rec.skipped += 1;
+      const gid = t.plan?.goal?.goal_id;
+      if (gid) skippedGoalSets.get(key)?.add(String(gid));
+    }
+  }
+
+  // finalize skippedProjects counts
+  for (const [key, set] of skippedGoalSets.entries()) {
+    const rec = series.get(key);
+    if (rec) rec.skippedProjects = set.size;
   }
 
   return Array.from(series.values());

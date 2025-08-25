@@ -234,7 +234,8 @@ async function updateTaskStatus(taskId, status) {
     where: { task_id: taskId },
     data: {
       status: status,
-      completed_at: status === 'complete' ? new Date() : null,
+      // Use completed_at as a general "status_changed_at" so we can time-bucket skipped too
+      completed_at: (status === 'complete' || status === 'skipped') ? new Date() : null,
     },
     select: { task_id: true, plan_id: true, status: true, completed_at: true, title: true, description: true, type: true, estimated_duration: true, resource_url: true },
   });

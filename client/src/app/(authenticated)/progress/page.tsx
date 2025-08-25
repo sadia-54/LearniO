@@ -4,10 +4,11 @@ import axios from "axios";
 import { useSession } from "next-auth/react";
 
 type Overview = { totalTasksCompleted: number; activeGoals: number; weeklyStudyHours: number };
-type MonthlyItem = { month: string; completed: number; skipped: number };
+type MonthlyItem = { month: string; completed: number; skipped: number; skippedProjects?: number };
 type DailyTime = { date: string; minutes: number };
 type QuizPerf = { quiz_id: string; title: string; accuracy: number; date: string };
 type Streak = { days: { date: string; hasStudy: boolean }[]; currentStreak: number };
+type TaskWithPlan = { task_id: string; status: string; completed_at?: string; plan?: { date?: string } };
 
 type Summary = {
   overview: Overview;
@@ -17,45 +18,148 @@ type Summary = {
   streak: Streak;
 };
 
-function BarChart({ data, height = 160, color = "#14b8a6" }: { data: number[]; height?: number; color?: string }) {
-  const max = Math.max(1, ...data);
-  const barWidth = 24;
-  const gap = 16;
-  const width = data.length * (barWidth + gap) + gap;
+// Simple utility to compute "nice" ticks for y-axes
+function computeTicks(maxValue: number, tickCount = 4) {
+  const max = Math.max(1, maxValue);
+  const step = Math.ceil(max / tickCount);
+  const ticks = Array.from({ length: tickCount + 1 }, (_, i) => i * step);
+  return { ticks, top: ticks[ticks.length - 1] };
+}
+
+function GroupedBarChart({
+  labels,
+  series,
+  height = 220,
+  colors = ["#10b981", "#a78bfa"],
+  names = [],
+}: {
+  labels: string[];
+  series: number[][]; // [completed, skipped, skippedProjects?]
+  height?: number;
+  colors?: string[];
+  names?: string[];
+}) {
+  const padding = { top: 16, right: 16, bottom: 36, left: 36 };
+  const innerH = height - padding.top - padding.bottom;
+  const barW = 18;
+  const groupGap = 22;
+  const barGap = 10; // gap between bars within group
+  const barsPerGroup = series.length;
+  const width = padding.left + padding.right + labels.length * (barsPerGroup * barW + (barsPerGroup - 1) * barGap + groupGap);
+  const allValues = series.reduce<number[]>((acc, arr) => acc.concat(arr as number[]), []);
+  const { ticks, top } = computeTicks(Math.max(1, ...allValues), 4);
+  const scaleY = (v: number) => padding.top + innerH - (v / top) * innerH;
+
   return (
     <svg width={width} height={height} className="overflow-visible">
-      {data.map((v, i) => {
-        const h = Math.round((v / max) * (height - 20));
-        const x = gap + i * (barWidth + gap);
-        const y = height - h;
+      {/* Gridlines + Y labels */}
+      {ticks.map((t, i) => (
+        <g key={i}>
+          <line
+            x1={padding.left}
+            x2={width - padding.right}
+            y1={scaleY(t)}
+            y2={scaleY(t)}
+            stroke="#e5e7eb"
+          />
+          <text x={padding.left - 8} y={scaleY(t)} textAnchor="end" dominantBaseline="middle" className="fill-gray-400 text-[10px]">
+            {t}
+          </text>
+        </g>
+      ))}
+
+      {/* X axis */}
+      <line x1={padding.left} x2={width - padding.right} y1={padding.top + innerH} y2={padding.top + innerH} stroke="#e5e7eb" />
+
+      {/* Bars */}
+      {labels.map((label, i) => {
+        const baseX = padding.left + i * (barsPerGroup * barW + (barsPerGroup - 1) * barGap + groupGap);
         return (
-          <g key={i}>
-            <rect x={x} y={y} width={barWidth} height={h} rx={6} fill={color} />
+          <g key={label}>
+            {series.map((arr, j) => {
+              const v = (arr as number[])[i] ?? 0;
+              const yRaw = scaleY(v);
+              const x = baseX + j * (barW + barGap);
+              const h = Math.max(2, padding.top + innerH - yRaw); // ensure tiny values still visible
+              const y = padding.top + innerH - h;
+              return (
+                <g key={j}>
+                  <rect x={x} y={y} width={barW} height={h} rx={4} fill={colors[j] || '#94a3b8'} stroke="#e2e8f0" />
+                  <text x={x + barW / 2} y={y - 4} textAnchor="middle" className="fill-gray-500 text-[10px]">{v}</text>
+                </g>
+              );
+            })}
+            <text x={baseX + (barsPerGroup * barW + (barsPerGroup - 1) * barGap) / 2} y={padding.top + innerH + 16} textAnchor="middle" className="fill-gray-500 text-[10px]">
+              {label}
+            </text>
           </g>
         );
       })}
+
+      {/* Legend */}
+      <g transform={`translate(${padding.left}, ${padding.top - 6})`}>
+        {series.map((_, j) => (
+          <g key={j} transform={`translate(${j * 120}, 0)`}>
+            <rect width="10" height="10" rx="2" fill={colors[j] || '#94a3b8'} />
+            <text x="14" y="9" className="fill-gray-600 text-[10px]">{names[j] || `Series ${j + 1}`}</text>
+          </g>
+        ))}
+      </g>
     </svg>
   );
 }
 
-function LineChart({ data, height = 160, color = "#0ea5e9" }: { data: number[]; height?: number; color?: string }) {
-  const max = Math.max(1, ...data);
-  const w = 280;
-  const h = height;
-  const step = data.length > 1 ? w / (data.length - 1) : 0;
-  const points = data.map((v, i) => {
-    const x = i * step;
-    const y = h - Math.round((v / max) * (h - 20)) - 10;
-    return `${x},${y}`;
-  }).join(" ");
+function LineChart({
+  labels,
+  data,
+  height = 220,
+  color = "#0ea5e9",
+}: { labels: string[]; data: number[]; height?: number; color?: string }) {
+  const padding = { top: 16, right: 16, bottom: 36, left: 36 };
+  const innerH = height - padding.top - padding.bottom;
+  const w = padding.left + padding.right + Math.max(0, labels.length - 1) * 44; // 7 points ~ 264px
+  const innerW = w - padding.left - padding.right;
+  const { ticks, top } = computeTicks(Math.max(...data), 4);
+  const scaleX = (i: number) => padding.left + (labels.length <= 1 ? 0 : (i * innerW) / (labels.length - 1));
+  const scaleY = (v: number) => padding.top + innerH - (v / top) * innerH;
+
+  const points = data.map((v, i) => `${scaleX(i)},${scaleY(v)}`).join(" ");
+
   return (
-    <svg width={w} height={h} className="overflow-visible">
+    <svg width={w} height={height} className="overflow-visible">
+      {/* Gridlines & Y labels */}
+      {ticks.map((t, i) => (
+        <g key={i}>
+          <line x1={padding.left} x2={w - padding.right} y1={scaleY(t)} y2={scaleY(t)} stroke="#e5e7eb" />
+          <text x={padding.left - 8} y={scaleY(t)} textAnchor="end" dominantBaseline="middle" className="fill-gray-400 text-[10px]">
+            {t}
+          </text>
+        </g>
+      ))}
+
+      {/* X axis */}
+      <line x1={padding.left} x2={w - padding.right} y1={padding.top + innerH} y2={padding.top + innerH} stroke="#e5e7eb" />
+
+      {/* Line */}
       <polyline fill="none" stroke={color} strokeWidth={2} points={points} />
-      {data.map((v, i) => {
-        const x = i * step;
-        const y = h - Math.round((v / max) * (h - 20)) - 10;
-        return <circle key={i} cx={x} cy={y} r={3} fill={color} />;
-      })}
+
+      {/* Points */}
+      {data.map((v, i) => (
+        <circle key={i} cx={scaleX(i)} cy={scaleY(v)} r={3} fill={color} />
+      ))}
+
+      {/* X labels */}
+      {labels.map((lbl, i) => (
+        <text key={lbl + i} x={scaleX(i)} y={padding.top + innerH + 16} textAnchor="middle" className="fill-gray-500 text-[10px]">
+          {lbl}
+        </text>
+      ))}
+
+      {/* Legend */}
+      <g transform={`translate(${padding.left}, ${padding.top - 6})`}>
+        <circle cx="5" cy="5" r="5" fill={color} />
+        <text x="14" y="9" className="fill-gray-600 text-[10px]">Hours</text>
+      </g>
     </svg>
   );
 }
@@ -71,13 +175,70 @@ export default function ProgressPage() {
     enabled: !!session?.user?.user_id,
   });
 
+  // Fallback fetch for skipped tasks by month if the summary reports all zeros
+  const skippedNeeded = !!data && data.monthlyTaskCompletion.every(m => (m.skipped || 0) === 0);
+  const { data: skippedTasks } = useQuery<{ tasks: TaskWithPlan[] }>({
+    queryKey: ["skipped-tasks", session?.user?.user_id],
+    queryFn: async () => {
+      const res = await axios.get(`http://localhost:5000/api/users/${session!.user.user_id}/tasks`, { params: { status: "skipped" } });
+      return res.data;
+    },
+    enabled: !!session?.user?.user_id,
+    staleTime: 1000 * 60,
+  });
+
+  const { data: completedTasks } = useQuery<{ tasks: TaskWithPlan[] }>({
+    queryKey: ["completed-tasks", session?.user?.user_id],
+    queryFn: async () => {
+      const res = await axios.get(`http://localhost:5000/api/users/${session!.user.user_id}/tasks`, { params: { status: "complete" } });
+      return res.data;
+    },
+    enabled: !!session?.user?.user_id,
+    staleTime: 1000 * 60,
+  });
+
   if (isLoading) return <div className="p-6">Loading progress…</div>;
   if (error || !data) return <div className="p-6 text-red-600">Failed to load progress.</div>;
 
   const months = data.monthlyTaskCompletion.map(m => m.month);
-  const completed = data.monthlyTaskCompletion.map(m => m.completed);
-  const skipped = data.monthlyTaskCompletion.map(m => m.skipped);
-  const studyMinutes = data.dailyStudyTime.map(d => d.minutes);
+  let completed = data.monthlyTaskCompletion.map(m => m.completed);
+  let skipped = data.monthlyTaskCompletion.map(m => m.skipped);
+  if (skippedTasks?.tasks || completedTasks?.tasks) {
+    // Build month keys for the last N months matching the months array length
+    const N = months.length;
+    const now = new Date();
+    const monthKeys: string[] = [];
+    for (let i = N - 1; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      monthKeys.push(key);
+    }
+    const indexByKey = new Map(monthKeys.map((k, i) => [k, i] as const));
+    const arr = new Array(N).fill(0);
+    if (skippedTasks?.tasks) {
+      for (const t of skippedTasks.tasks) {
+        const d = new Date(t.plan?.date ?? t.completed_at ?? Date.now());
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        const idx = indexByKey.get(key);
+        if (idx !== undefined) arr[idx] += 1;
+      }
+      skipped = skipped.map((v, i) => Math.max(v || 0, arr[i] || 0));
+    }
+
+    if (completedTasks?.tasks) {
+      const completedArr = new Array(N).fill(0);
+      for (const t of completedTasks.tasks) {
+        const d = new Date(t.completed_at ?? t.plan?.date ?? Date.now());
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        const idx = indexByKey.get(key);
+        if (idx !== undefined) completedArr[idx] += 1;
+      }
+      completed = completed.map((v, i) => Math.max(v || 0, completedArr[i] || 0));
+    }
+  }
+  // Only show completed vs skipped tasks side-by-side as requested
+  const studyMinutes = data.dailyStudyTime.map(d => Math.round((d.minutes || 0) / 60)); // convert to hours for chart
+  const dayLabels = data.dailyStudyTime.map(d => new Date(d.date).toLocaleDateString(undefined, { weekday: "short" }));
 
   return (
     <div className="p-6">
@@ -108,24 +269,20 @@ export default function ProgressPage() {
           <div className="bg-white border border-gray-200 rounded-lg p-4">
             <div className="flex items-center justify-between mb-2">
               <div className="font-semibold text-gray-900">Monthly Task Completion</div>
-              <div className="text-xs text-gray-500">Completed vs Skipped</div>
+              <div className="text-xs text-gray-500">Completed vs. Skipped tasks over time.</div>
             </div>
-            <div className="flex items-end gap-6">
-              <div>
-                <BarChart data={completed} />
-                <div className="mt-2 text-xs text-gray-500">{months.join(" · ")}</div>
-              </div>
-              <div>
-                <BarChart data={skipped} color="#94a3b8" />
-              </div>
+            <div className="overflow-x-auto">
+              <GroupedBarChart labels={months} series={[completed, skipped]} names={["Completed Tasks", "Skipped Tasks"]} />
             </div>
           </div>
           <div className="bg-white border border-gray-200 rounded-lg p-4">
             <div className="flex items-center justify-between mb-2">
               <div className="font-semibold text-gray-900">Daily Study Time Distribution</div>
-              <div className="text-xs text-gray-500">Last 7 days</div>
+              <div className="text-xs text-gray-500">Average hours spent studying per day this week.</div>
             </div>
-            <LineChart data={studyMinutes} />
+            <div className="overflow-x-auto">
+              <LineChart labels={dayLabels} data={studyMinutes} />
+            </div>
           </div>
         </div>
 
