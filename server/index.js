@@ -34,12 +34,14 @@ const goalsRoutes = require('./routes/goalsRoutes');
 const dailyPlanRoutes = require('./routes/dailyPlanRoutes');
 const studyRoutes = require('./routes/studyRoutes');
 const progressRoutes = require('./routes/progressRoutes');
+const quizRoutes = require('./routes/quizRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/goals', goalsRoutes);
 app.use('/api', dailyPlanRoutes);
 app.use('/api/study', studyRoutes);
 app.use('/api', progressRoutes);
+app.use('/api', quizRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
