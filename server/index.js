@@ -37,6 +37,10 @@ const progressRoutes = require('./routes/progressRoutes');
 const quizRoutes = require('./routes/quizRoutes');
 const recommendationRoutes = require('./routes/recommendationRoutes');
 const chatRoutes = require('./routes/chatRoutes');
+const settingsRoutes = require('./routes/settingsRoutes');
+const reminderRoutes = require('./routes/reminderRoutes');
+const { startDailyReminderCron } = require('./services/reminderService');
+const userRoutes = require('./routes/userRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/goals', goalsRoutes);
@@ -46,6 +50,9 @@ app.use('/api', progressRoutes);
 app.use('/api', quizRoutes);
 app.use('/api', recommendationRoutes);
 app.use('/api', chatRoutes);
+app.use('/api', settingsRoutes);
+app.use('/api', reminderRoutes);
+app.use('/api', userRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -62,4 +69,6 @@ app.listen(PORT, () => {
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
   console.log(`🌐 CORS origin: ${process.env.CLIENT_URL || 'http://localhost:3000'}`);
   console.log(`🤖 Gemini AI: ${process.env.GEMINI_API_KEY ? 'Configured' : 'Not configured'}`);
+  // Start daily reminder cron after server starts
+  startDailyReminderCron();
 });

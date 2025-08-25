@@ -1,5 +1,5 @@
 const express = require('express');
-const { upsertUser } = require('../controllers/userController');
+const { upsertUser, deleteAccount } = require('../controllers/userController');
 
 const router = express.Router();
 
@@ -14,3 +14,6 @@ router.post('/users', async (req, res) => {
 });
 
 module.exports = router;
+
+// DELETE /api/users/:userId - permanently delete account
+router.delete('/users/:userId', deleteAccount);
