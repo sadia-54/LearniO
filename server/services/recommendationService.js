@@ -1,5 +1,5 @@
 const prisma = require('../db');
-const { generateFeedbackRecommendations } = require('./geminiService');
+const { generateFeedbackRecommendations } = require('./gemini/generateFeedbackRecommendations');
 
 function startEndOfToday() {
   const start = new Date();

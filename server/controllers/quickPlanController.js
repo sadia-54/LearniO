@@ -1,4 +1,4 @@
-const { generateDailyTasksForGoals } = require('../services/geminiService');
+const { generateDailyTasksForGoals } = require('../services/gemini/generateDailyTasksForGoals');
 
 async function generateQuickPlans(req, res) {
   try {

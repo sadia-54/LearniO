@@ -1,5 +1,6 @@
 const prisma = require('../db');
-const { generateDailyPlan, generateFullTimelinePlans } = require('./geminiService');
+const { generateDailyPlan } = require('./gemini/generateDailyPlan');
+const { generateFullTimelinePlans } = require('./gemini/generateFullTimelinePlans');
 
 async function getDailyPlansByGoalId(goalId) {
   const dailyPlans = await prisma.dailyPlans.findMany({

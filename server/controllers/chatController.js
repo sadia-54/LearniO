@@ -1,5 +1,5 @@
 const { getSummary } = require('../services/progressService');
-const { generateChatFromMetrics } = require('../services/geminiService');
+const { generateChatFromMetrics } = require('../services/gemini/generateChatFromMetrics');
 
 async function chatWithAI(req, res, next) {
   try {

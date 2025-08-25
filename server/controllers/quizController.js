@@ -1,5 +1,5 @@
 const prisma = require('../db');
-const { generateQuizQuestions } = require('../services/geminiService');
+const { generateQuizQuestions } = require('../services/gemini/generateQuizQuestions');
 
 // GET /api/quizzes/from-task/:taskId?count=12
 exports.generateFromTask = async (req, res, next) => {
