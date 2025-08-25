@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { useState } from "react";
 
 type Overview = { totalTasksCompleted: number; activeGoals: number; weeklyStudyHours: number };
 type MonthlyItem = { month: string; completed: number; skipped: number };
@@ -39,6 +40,8 @@ function InsightBadge({ children, color = "teal" }: { children: React.ReactNode;
 export default function FeedbackPage() {
   const { data: session } = useSession();
   const qc = useQueryClient();
+  const [chatInput, setChatInput] = useState("");
+  const [chatAnswer, setChatAnswer] = useState<string | null>(null);
   const { data, isLoading, error } = useQuery<Summary>({
     queryKey: ["progress-summary", session?.user?.user_id],
     queryFn: async () => {
@@ -65,6 +68,14 @@ export default function FeedbackPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["ai-recommendations", session?.user?.user_id] });
     },
+  });
+
+  const chatMutation = useMutation<{ answer: string }, unknown, string>({
+    mutationFn: async (prompt: string) => {
+      const res = await axios.post(`http://localhost:5000/api/users/${session!.user.user_id}/chat`, { prompt });
+      return res.data;
+    },
+    onSuccess: (res) => setChatAnswer(res.answer),
   });
 
   // Derived metrics for insights
@@ -108,6 +119,38 @@ export default function FeedbackPage() {
 
         {data && (
           <>
+            {/* Chat Section */}
+            <div className="mb-6 rounded-lg border border-gray-200 bg-white p-4">
+              <h2 className="text-lg font-semibold text-gray-900">Ask AI a Question or Request a Report</h2>
+              <p className="mt-1 text-sm text-gray-600">Get instant personalized feedback or generate a detailed study report.</p>
+              <div className="mt-3">
+                <textarea
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  placeholder="E.g., 'Analyze my progress in organic chemistry' or 'Suggest ways to improve focus during long study sessions.'"
+                  className="w-full rounded-md border border-indigo-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 p-3 min-h-[120px] outline-none"
+                />
+              </div>
+              <div className="mt-3 flex items-center gap-3">
+                <button
+                  onClick={() => chatInput.trim() && chatMutation.mutate(chatInput.trim())}
+                  disabled={chatMutation.isPending || !chatInput.trim()}
+                  className="inline-flex items-center rounded-md bg-teal-600 px-3 py-2 text-sm font-medium text-white hover:bg-teal-700 disabled:opacity-60"
+                >
+                  {chatMutation.isPending ? 'Asking…' : 'Ask AI'}
+                </button>
+                <button
+                  onClick={() => { setChatInput(""); setChatAnswer(null); }}
+                  className="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Clear Input
+                </button>
+              </div>
+              {chatAnswer && (
+                <div className="mt-4 rounded-md border border-gray-100 bg-gray-50 p-3 text-sm text-gray-800 whitespace-pre-wrap">{chatAnswer}</div>
+              )}
+            </div>
+
             {/* AI Recommendations header bar */}
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-base font-semibold text-gray-900">AI Recommendations</h2>
@@ -153,7 +196,14 @@ export default function FeedbackPage() {
                     : "We couldn't detect study sessions this week. Try short focused blocks to get started."}
                 </p>
                 <div className="mt-4">
-                  <Link href="/" className="inline-flex items-center rounded-md bg-teal-600 px-3 py-2 text-sm font-medium text-white hover:bg-teal-700">Learn More about Pomodoro</Link>
+                  <a
+                    href="https://francescocirillo.com/pages/pomodoro-technique"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center rounded-md bg-teal-600 px-3 py-2 text-sm font-medium text-white hover:bg-teal-700"
+                  >
+                    Learn More about Pomodoro
+                  </a>
                 </div>
               </div>
 
