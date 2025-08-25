@@ -15,12 +15,15 @@ async function upsertUser({ name, email, profile_picture }) {
 
 module.exports = { upsertUser };
 
+const { deleteUserUseCase } = require('../container');
+
 async function deleteAccount(req, res, next) {
   try {
     const { userId } = req.params;
     if (!userId) return res.status(400).json({ error: 'userId required' });
-    const result = await userService.deleteUserPermanently(userId);
-    res.json(result);
+  const result = await deleteUserUseCase.execute(userId);
+  if (!result.ok) return res.status(400).json({ error: result.error });
+  res.json(result.value);
   } catch (err) {
     next(err);
   }

@@ -237,7 +237,17 @@ async function updateTaskStatus(taskId, status) {
       // Use completed_at as a general "status_changed_at" so we can time-bucket skipped too
       completed_at: (status === 'complete' || status === 'skipped') ? new Date() : null,
     },
-    select: { task_id: true, plan_id: true, status: true, completed_at: true, title: true, description: true, type: true, estimated_duration: true, resource_url: true },
+    select: {
+      task_id: true,
+      plan_id: true,
+      status: true,
+      completed_at: true,
+      title: true,
+      description: true,
+      type: true,
+      estimated_duration: true,
+      resource_url: true,
+    },
   });
 
   // Recalculate parent plan status
@@ -245,6 +255,21 @@ async function updateTaskStatus(taskId, status) {
     await recalcPlanStatus(updatedTask.plan_id);
   } catch (e) {
     console.warn('Failed to recalc plan status for plan', updatedTask.plan_id, e?.message || e);
+  }
+
+  // Persist Progress aggregate for the user that owns this task
+  try {
+    const plan = await prisma.dailyPlans.findUnique({
+      where: { plan_id: updatedTask.plan_id },
+      select: { goal: { select: { user_id: true } } },
+    });
+    const userId = plan?.goal?.user_id;
+    if (userId) {
+      const { upsertFromUserTasks } = require('./progressWriteService');
+      await upsertFromUserTasks(userId);
+    }
+  } catch (e) {
+    console.warn('Failed to upsert Progress after task update', e?.message || e);
   }
 
   return updatedTask;
