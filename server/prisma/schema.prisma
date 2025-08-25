@@ -7,6 +7,148 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Users {
+  user_id         String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String
+  email           String              @unique
+  profile_picture String?
+  created_at      DateTime            @default(now())
+  recommendations AIRecommendations[]
+  achievements    Achievements[]
+  answers         Answers[]
+  notifications   Notifications[]
+  progress        Progress?
+  settings        Settings?
+  studyGoals      StudyGoals[]
+}
+
+model StudyGoals {
+  goal_id          String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id          String          @db.Uuid
+  title            String
+  description      String?
+  difficulty_level DifficultyLevel
+  start_date       DateTime
+  end_date         DateTime
+  created_at       DateTime        @default(now())
+  dailyPlans       DailyPlans[]
+  user             Users           @relation(fields: [user_id], references: [user_id])
+}
+
+model DailyPlans {
+  plan_id    String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  goal_id    String     @db.Uuid
+  date       DateTime
+  status     PlanStatus @default(pending)
+  created_at DateTime   @default(now())
+  goal       StudyGoals @relation(fields: [goal_id], references: [goal_id])
+  tasks      Tasks[]
+}
+
+model Tasks {
+  task_id            String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  plan_id            String              @db.Uuid
+  type               TaskType?
+  title              String
+  description        String?
+  resource_url       String?
+  estimated_duration Int?
+  status             TaskStatus          @default(incomplete)
+  completed_at       DateTime?
+  recommendations    AIRecommendations[]
+  notifications      Notifications[]
+  quizzes            Quizzes[]
+  plan               DailyPlans          @relation(fields: [plan_id], references: [plan_id])
+}
+
+model Quizzes {
+  quiz_id     String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  task_id     String      @db.Uuid
+  title       String
+  total_score Int?
+  questions   Questions[]
+  task        Tasks       @relation(fields: [task_id], references: [task_id])
+}
+
+model Questions {
+  question_id    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  quiz_id        String    @db.Uuid
+  question_text  String
+  option_a       String
+  option_b       String
+  option_c       String?
+  option_d       String?
+  correct_option String    @db.Char(1)
+  answers        Answers[]
+  quiz           Quizzes   @relation(fields: [quiz_id], references: [quiz_id])
+}
+
+model Answers {
+  answer_id       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  question_id     String    @db.Uuid
+  user_id         String    @db.Uuid
+  selected_option String?   @db.Char(1)
+  is_correct      Boolean?
+  answered_at     DateTime  @default(now())
+  question        Questions @relation(fields: [question_id], references: [question_id])
+  user            Users     @relation(fields: [user_id], references: [user_id])
+}
+
+model Progress {
+  current_streak        Int       @default(0)
+  last_active_date      DateTime?
+  progress_id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  total_tasks_completed Int       @default(0)
+  total_tasks_skipped   Int       @default(0)
+  total_time_spent      Int       @default(0)
+  user_id               String    @unique @db.Uuid
+  user                  Users     @relation(fields: [user_id], references: [user_id])
+}
+
+model AIRecommendations {
+  recommendation_id   String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id             String             @db.Uuid
+  task_id             String?            @db.Uuid
+  recommendation_text String
+  recommendation_type RecommendationType
+  created_at          DateTime           @default(now())
+  task                Tasks?             @relation(fields: [task_id], references: [task_id])
+  user                Users              @relation(fields: [user_id], references: [user_id])
+}
+
+model Achievements {
+  achievement_id String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id        String   @db.Uuid
+  title          String
+  description    String?
+  achieved_at    DateTime @default(now())
+  user           Users    @relation(fields: [user_id], references: [user_id])
+}
+
+model Settings {
+  daily_study_hours     Int      @default(2)
+  email_reminder        Boolean  @default(true)
+  interface_theme       String   @default("light")
+  preferred_time_blocks Json?
+  setting_id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  weekend_days          String[]
+  user_id               String   @unique @db.Uuid
+  user                  Users    @relation(fields: [user_id], references: [user_id])
+}
+
+model Notifications {
+  notification_id   String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id           String           @db.Uuid
+  task_id           String?          @db.Uuid
+  message           String
+  is_read           Boolean          @default(false)
+  notification_type NotificationType
+  created_at        DateTime         @default(now())
+  scheduled_for     DateTime?
+  task              Tasks?           @relation(fields: [task_id], references: [task_id])
+  user              Users            @relation(fields: [user_id], references: [user_id])
+}
+
 enum DifficultyLevel {
   easy
   medium
@@ -43,159 +185,4 @@ enum NotificationType {
   reminder
   alert
   achievement
-}
-
-model Users {
-  user_id         String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name            String
-  email           String            @unique
-  profile_picture String?
-  created_at      DateTime          @default(now())
-
-  studyGoals      StudyGoals[]
-  answers         Answers[]
-  progress        Progress?
-  settings        Settings?
-  achievements    Achievements[]
-  recommendations AIRecommendations[]
-  notifications   Notifications[]
-}
-
-model StudyGoals {
-  goal_id         String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id         String           @db.Uuid
-  title           String
-  description     String?
-  difficulty_level DifficultyLevel
-  start_date      DateTime
-  end_date        DateTime
-  created_at      DateTime         @default(now())
-
-  user            Users            @relation(fields: [user_id], references: [user_id])
-  dailyPlans      DailyPlans[]
-}
-
-model DailyPlans {
-  plan_id     String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  goal_id     String      @db.Uuid
-  date        DateTime
-  status      PlanStatus  @default(pending)
-  created_at  DateTime    @default(now())
-
-  goal        StudyGoals  @relation(fields: [goal_id], references: [goal_id])
-  tasks       Tasks[]
-}
-
-model Tasks {
-  task_id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  plan_id           String       @db.Uuid
-  type              TaskType?
-  title             String
-  description       String?
-  resource_url      String?
-  estimated_duration Int?
-  status            TaskStatus   @default(incomplete)
-  completed_at      DateTime?
-
-  plan              DailyPlans   @relation(fields: [plan_id], references: [plan_id])
-  quizzes           Quizzes[]    // ✅ Changed to plural
-  recommendations   AIRecommendations[]
-  notifications     Notifications[]
-}
-
-model Quizzes {
-  quiz_id     String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  task_id     String    @db.Uuid
-  title       String
-  total_score Int?
-
-  task        Tasks     @relation(fields: [task_id], references: [task_id])
-  questions   Questions[]
-}
-
-
-model Questions {
-  question_id    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  quiz_id        String   @db.Uuid
-  question_text  String
-  option_a       String
-  option_b       String
-  option_c       String?
-  option_d       String?
-  correct_option String   @db.Char(1)
-
-  quiz           Quizzes  @relation(fields: [quiz_id], references: [quiz_id])
-  answers        Answers[]
-}
-
-model Answers {
-  answer_id       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  question_id     String    @db.Uuid
-  user_id         String    @db.Uuid
-  selected_option String?   @db.Char(1)
-  is_correct      Boolean?
-  answered_at     DateTime  @default(now())
-
-  question        Questions @relation(fields: [question_id], references: [question_id])
-  user            Users     @relation(fields: [user_id], references: [user_id])
-}
-
-model Progress {
-  progress_id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id               String   @unique @db.Uuid
-  total_tasks_completed Int      @default(0)
-  total_tasks_skipped   Int      @default(0)
-  total_time_spent      Int      @default(0)
-  current_streak        Int      @default(0)
-  last_active_date      DateTime?
-
-  user                  Users    @relation(fields: [user_id], references: [user_id])
-}
-
-model AIRecommendations {
-  recommendation_id   String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id             String             @db.Uuid
-  task_id             String?            @db.Uuid
-  recommendation_text String
-  recommendation_type RecommendationType
-  created_at          DateTime           @default(now())
-
-  user                Users              @relation(fields: [user_id], references: [user_id])
-  task                Tasks?             @relation(fields: [task_id], references: [task_id])
-}
-
-model Achievements {
-  achievement_id String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id        String   @db.Uuid
-  title          String
-  description    String?
-  achieved_at    DateTime @default(now())
-
-  user           Users    @relation(fields: [user_id], references: [user_id])
-}
-
-model Settings {
-  setting_id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id             String    @unique @db.Uuid
-  email_reminder      Boolean   @default(true)
-  daily_study_hours   Int       @default(2)
-  interface_theme     String    @default("light")
-  preferred_time_blocks Json?
-  weekend_days        String[]
-
-  user                Users     @relation(fields: [user_id], references: [user_id])
-}
-
-model Notifications {
-  notification_id   String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id           String           @db.Uuid
-  task_id           String?          @db.Uuid
-  message           String
-  is_read           Boolean          @default(false)
-  notification_type NotificationType
-  created_at        DateTime         @default(now())
-  scheduled_for     DateTime?
-
-  user              Users            @relation(fields: [user_id], references: [user_id])
-  task              Tasks?           @relation(fields: [task_id], references: [task_id])
 }
