@@ -115,11 +115,11 @@ export default function DailyPlansPage() {
   const dayPlans = allPlans?.plans || [];
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-3 md:p-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
         <h1 className="text-3xl font-semibold text-gray-900">Your Daily Learning Plan</h1>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-3 bg-white px-3 py-2 rounded-lg border border-gray-200">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex items-center justify-between sm:justify-start gap-3 bg-white px-3 py-2 rounded-lg border border-gray-200">
             <button
               onClick={() => navigateDate('prev')}
               className="text-teal-600 hover:text-teal-800 px-3 py-1 rounded-lg hover:bg-teal-50"

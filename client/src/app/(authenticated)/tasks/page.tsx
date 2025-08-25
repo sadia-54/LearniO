@@ -42,8 +42,18 @@ export default function TasksPage() {
       const res = await axios.put(`http://localhost:5000/api/tasks/${taskId}/status`, { status });
       return res.data;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      // Recompute and persist Progress on the server from current Tasks
+      if (session?.user?.user_id) {
+        try {
+          await axios.post(`http://localhost:5000/api/users/${session.user.user_id}/progress/recompute`);
+        } catch {}
+      }
+      // Refresh local caches
       queryClient.invalidateQueries({ queryKey: ["userTasks", session?.user?.user_id, filter] });
+      queryClient.invalidateQueries({ queryKey: ["progress-summary", session?.user?.user_id] });
+      queryClient.invalidateQueries({ queryKey: ["completed-tasks", session?.user?.user_id] });
+      queryClient.invalidateQueries({ queryKey: ["skipped-tasks", session?.user?.user_id] });
     }
   });
 
@@ -115,11 +125,11 @@ export default function TasksPage() {
   );
 
   return (
-    <div className="p-6">
+    <div className="p-3 md:p-6">
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
           <h1 className="text-3xl font-semibold text-gray-900">Task Tracking</h1>
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-wrap items-center gap-2">
             {(["all", "incomplete", "complete", "skipped"] as const).map(f => (
               <button key={f} onClick={() => setFilter(f)} className={`px-3 py-1.5 rounded border text-sm ${filter === f ? 'bg-teal-500 text-white border-teal-500' : 'bg-white text-gray-700 border-gray-200'}`}>{f === 'incomplete' ? 'pending' : f}</button>
             ))}

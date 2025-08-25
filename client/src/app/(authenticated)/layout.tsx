@@ -9,6 +9,7 @@ export default function AuthenticatedLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Layout stays mostly the same; Sidebar handles its own mobile drawer state
   return (
     <QueryProvider>
       <SearchProvider>
@@ -16,7 +17,7 @@ export default function AuthenticatedLayout({
           <Navbar />
           <div className="flex">
             <Sidebar />
-            <main className="flex-1">
+            <main className="flex-1 p-3 md:p-6">
               {children}
             </main>
           </div>

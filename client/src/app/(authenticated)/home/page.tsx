@@ -152,17 +152,17 @@ export default function HomePage() {
   return (
 
 
-        <div className="p-6">
+        <div className="p-3 md:p-6">
 			<div className="max-w-6xl mx-auto">
 				{/* Header Section */}
-				<div className="mb-8">
+        <div className="mb-8">
 					<h1 className="text-3xl font-semibold text-gray-900 mb-2">Your Learning Goals</h1>
 					<p className="text-gray-600">Define and organize your learning objectives to stay on track.</p>
 				</div>
 
         {/* Stats Section */}
-				<div className="flex items-center justify-between mb-5">
-					<div className="flex space-x-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+          <div className="grid grid-cols-3 gap-3 sm:flex sm:space-x-4 sm:gap-0">
 						<div className="text-center bg-gray-100 rounded-lg p-3">
 							<div className="text-2xl text-gray-900">{goals.length}</div>
 							<div className="text-sm text-gray-600">Total Goals</div>
@@ -178,7 +178,7 @@ export default function HomePage() {
 					</div>
 					<button 
 						onClick={() => setCreateModalOpen(true)}
-						className="bg-teal-500 hover:bg-teal-600 text-white px-6 py-3 rounded-lg font-medium transition-colors cursor-pointer"
+            className="w-full sm:w-auto bg-teal-500 hover:bg-teal-600 text-white px-6 py-3 rounded-lg font-medium transition-colors cursor-pointer"
 					>
 						Create New Goal
 					</button>

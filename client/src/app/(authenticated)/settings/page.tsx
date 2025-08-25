@@ -37,7 +37,7 @@ export default function SettingsPage() {
   const s = data?.settings;
 
   return (
-    <div className="p-6">
+    <div className="p-3 md:p-6">
       <div className="max-w-5xl mx-auto">
         <h1 className="text-3xl font-semibold text-gray-900 mb-6">User Settings</h1>
 
