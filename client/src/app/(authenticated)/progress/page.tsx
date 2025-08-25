@@ -244,7 +244,7 @@ export default function ProgressPage() {
     <div className="p-6">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-semibold text-gray-900">Your Study Overview</h1>
+          <h1 className="text-3xl font-semibold text-gray-900">Your Learning Overview</h1>
           <div className="text-sm text-gray-500">Updated {new Date().toLocaleDateString()}</div>
         </div>
 
