@@ -176,7 +176,6 @@ export default function ProgressPage() {
   });
 
   // Fallback fetch for skipped tasks by month if the summary reports all zeros
-  const skippedNeeded = !!data && data.monthlyTaskCompletion.every(m => (m.skipped || 0) === 0);
   const { data: skippedTasks } = useQuery<{ tasks: TaskWithPlan[] }>({
     queryKey: ["skipped-tasks", session?.user?.user_id],
     queryFn: async () => {

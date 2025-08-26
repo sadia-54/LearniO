@@ -166,7 +166,7 @@ export default function SettingsPage() {
                       await api.delete(`/api/users/${session!.user.user_id}`);
                       // Sign out after deletion
                       await signOut({ callbackUrl: '/' });
-                    } catch (e) { alert('Failed to delete account.'); }
+                    } catch { alert('Failed to delete account.'); }
                   }}
                   className="rounded-md border border-red-600 bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700"
                 >

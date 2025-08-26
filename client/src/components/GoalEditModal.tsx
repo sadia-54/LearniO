@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import api from '@/lib/api';
+import axios, { AxiosError } from 'axios';
 
 interface Goal {
   goal_id: string;
@@ -63,9 +64,12 @@ export default function GoalEditModal({ isOpen, onClose, goal, onSave }: GoalEdi
       }
     } catch (err: unknown) {
       console.error('Error updating goal:', err);
-      const msg = (typeof err === 'object' && err !== null && 'response' in err && (err as any).response?.data?.error)
-        ? (err as any).response.data.error
-        : 'Failed to update goal';
+      type ErrorResponse = { error?: string; message?: string };
+      let msg = 'Failed to update goal';
+      if (axios.isAxiosError<ErrorResponse>(err)) {
+        const data = (err as AxiosError<ErrorResponse>).response?.data;
+        msg = data?.error || data?.message || msg;
+      }
       setError(msg);
     } finally {
       setLoading(false);

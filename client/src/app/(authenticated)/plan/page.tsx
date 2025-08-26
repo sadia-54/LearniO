@@ -2,7 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSession } from "next-auth/react";
 // Removed unused import
 
@@ -145,7 +145,7 @@ export default function DailyPlansPage() {
           </Link>
         </div>
       </div>
-      <p className="text-gray-600 mb-6">All your goals' plans for the selected day.</p>
+  <p className="text-gray-600 mb-6">All your goals&apos; plans for the selected day.</p>
       {dayPlans.length === 0 ? (
         <div className="text-center py-12">
           <div className="text-6xl mb-4">📚</div>

@@ -180,7 +180,7 @@ export default function FeedbackPage() {
                 ))}
               </div>
             ) : (
-              <div className="mb-8 rounded-md border border-gray-200 bg-white p-4 text-sm text-gray-600">No recommendations yet. Click "Generate New" to create personalized tips.</div>
+              <div className="mb-8 rounded-md border border-gray-200 bg-white p-4 text-sm text-gray-600">No recommendations yet. Click &quot;Generate New&quot; to create personalized tips.</div>
             )}
             <h2 className="mt-2 mb-3 text-base font-semibold text-gray-900">Your Latest Insights</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

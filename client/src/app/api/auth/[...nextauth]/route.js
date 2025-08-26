@@ -9,7 +9,7 @@ const authOptions = {
     }),
   ],
   callbacks: {
-    async signIn({ user, account, profile, email, credentials }) {
+    async signIn({ user }) {
       try {
         console.log('🔐 Sign in callback triggered for:', user.email);
         
@@ -44,21 +44,21 @@ const authOptions = {
         return true;
       }
     },
-    async jwt({ token, user, account, profile }) {
+  async jwt({ token, user }) {
       // Add user_id to JWT token if available
       if (user?.user_id) {
         token.user_id = user.user_id;
       }
       return token;
     },
-    async session({ session, token, user }) {
+  async session({ session, token }) {
       // Add user_id to session if available
       if (token?.user_id) {
         session.user.user_id = token.user_id;
       }
       return session;
     },
-    async redirect({ url, baseUrl }) {
+  async redirect() {
       return "/home";
     },
   },

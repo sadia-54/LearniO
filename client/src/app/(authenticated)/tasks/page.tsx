@@ -30,12 +30,12 @@ export default function TasksPage() {
     enabled: !!session?.user?.user_id,
   });
 
-  const tasks = data?.tasks || [];
   const grouped = useMemo(() => {
+    const tasks: TaskItem[] = data?.tasks ?? [];
     const byStatus: Record<string, TaskItem[]> = { incomplete: [], complete: [], skipped: [] };
     for (const t of tasks) byStatus[t.status].push(t);
     return byStatus;
-  }, [tasks]);
+  }, [data?.tasks]);
 
   const updateTaskMutation = useMutation({
     mutationFn: async ({ taskId, status }: { taskId: string; status: "incomplete" | "complete" | "skipped" }) => {
