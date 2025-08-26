@@ -22,12 +22,24 @@ type Question = {
   option_d: string;
 };
 
+type QuizResult = { score: number; total: number; correct: number; answers?: Array<{
+  question_id?: string;
+  question_text: string;
+  option_a: string;
+  option_b: string;
+  option_c: string | null;
+  option_d: string | null;
+  selected_option: string;
+  correct_option: string | null;
+  is_correct: boolean;
+}> };
+
 export default function QuizzesPage() {
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
   const [activeQuiz, setActiveQuiz] = useState<Quiz | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [result, setResult] = useState<{ score: number; total: number; correct: number } | null>(null);
+  const [result, setResult] = useState<QuizResult | null>(null);
   const [loadingTaskId, setLoadingTaskId] = useState<string | null>(null);
   const userId = session?.user?.user_id as string | undefined;
 
@@ -89,7 +101,7 @@ export default function QuizzesPage() {
     },
   });
 
-  const submitQuiz = useMutation<{ score: number; total: number; correct: number }, Error, void>({
+  const submitQuiz = useMutation<QuizResult, Error, void>({
     mutationFn: async () => {
       if (!activeQuiz || !userId) throw new Error("No quiz");
       const payload = {
@@ -97,7 +109,7 @@ export default function QuizzesPage() {
         answers: Object.entries(answers).map(([question_id, selected_option]) => ({ question_id, selected_option })),
       };
       const res = await api.post(`/api/quizzes/${activeQuiz.quiz_id}/submit`, payload);
-      return res.data as { score: number; total: number; correct: number };
+  return res.data as QuizResult;
     },
     onSuccess: (data) => {
       setResult(data);
@@ -204,32 +216,71 @@ export default function QuizzesPage() {
               </div>
 
               <div className="p-4 space-y-4">
-                {activeQuiz.questions.map((q, idx) => (
-                  <div key={q.question_id} className="border rounded-md p-3">
-                    <div className="text-sm text-gray-900 mb-2">
-                      {idx + 1}. {q.question_text}
+                {result && result.answers ? (
+                  <>
+                    <div className="text-sm font-semibold text-gray-900">Your Answers</div>
+                    {result.answers.map((a, i) => (
+                      <div
+                        key={a.question_id || i}
+                        className={`border rounded-md p-3 ${a.is_correct ? 'border-green-300 bg-green-50' : 'border-red-300 bg-red-50'}`}
+                      >
+                        <div className="text-sm text-gray-900 mb-2">
+                          {i + 1}. {a.question_text}
+                        </div>
+                        <div className="grid grid-cols-1 gap-1 text-sm">
+                          <div className={`${a.selected_option === 'A' ? 'font-semibold' : ''}`}>A. {a.option_a}</div>
+                          <div className={`${a.selected_option === 'B' ? 'font-semibold' : ''}`}>B. {a.option_b}</div>
+                          {a.option_c && (
+                            <div className={`${a.selected_option === 'C' ? 'font-semibold' : ''}`}>C. {a.option_c}</div>
+                          )}
+                          {a.option_d && (
+                            <div className={`${a.selected_option === 'D' ? 'font-semibold' : ''}`}>D. {a.option_d}</div>
+                          )}
+                        </div>
+                        <div className="mt-2 text-xs">
+                          <span className="mr-2">
+                            Your answer: <span className="font-semibold">{a.selected_option}</span>
+                          </span>
+                          {a.correct_option && (
+                            <span>
+                              Correct answer: <span className="font-semibold">{a.correct_option}</span>
+                            </span>
+                          )}
+                          <span className={`ml-2 ${a.is_correct ? 'text-green-700' : 'text-red-700'}`}>
+                            {a.is_correct ? 'Correct' : 'Incorrect'}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                ) : (
+                  activeQuiz.questions.map((q, idx) => (
+                    <div key={q.question_id} className="border rounded-md p-3">
+                      <div className="text-sm text-gray-900 mb-2">
+                        {idx + 1}. {q.question_text}
+                      </div>
+                      <div className="grid grid-cols-1 gap-2">
+                        {[[
+                          "A",
+                          q.option_a,
+                        ], ["B", q.option_b], ["C", q.option_c], ["D", q.option_d]].map(
+                          ([key, val]) => (
+                            <label key={key as string} className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="radio"
+                                name={q.question_id}
+                                value={key as string}
+                                checked={answers[q.question_id] === key}
+                                onChange={() => setAnswers((m) => ({ ...m, [q.question_id]: key as string }))}
+                              />
+                              <span className="text-sm text-gray-700">{val}</span>
+                            </label>
+                          )
+                        )}
+                      </div>
                     </div>
-                    <div className="grid grid-cols-1 gap-2">
-                      {[[
-                        "A",
-                        q.option_a,
-                      ], ["B", q.option_b], ["C", q.option_c], ["D", q.option_d]].map(
-                        ([key, val]) => (
-                          <label key={key as string} className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              name={q.question_id}
-                              value={key as string}
-                              checked={answers[q.question_id] === key}
-                              onChange={() => setAnswers((m) => ({ ...m, [q.question_id]: key as string }))}
-                            />
-                            <span className="text-sm text-gray-700">{val}</span>
-                          </label>
-                        )
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
 
               <div className="sticky bottom-0 bg-white border-t p-4 flex items-center justify-between gap-3">
@@ -246,7 +297,7 @@ export default function QuizzesPage() {
                   )}
                 </div>
 
-                {result ? (
+                  {result ? (
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => {
@@ -269,6 +320,8 @@ export default function QuizzesPage() {
                   </button>
                 )}
               </div>
+
+
             </div>
           </div>
         )}

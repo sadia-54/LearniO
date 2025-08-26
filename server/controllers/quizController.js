@@ -47,23 +47,37 @@ exports.submitQuiz = async (req, res, next) => {
     const qs = await prisma.questions.findMany({ where: { quiz_id: quizId } });
     const byId = new Map(qs.map((q) => [q.question_id, q]));
     let correct = 0;
+    const details = [];
     for (const a of answers) {
       const q = byId.get(a.question_id);
-      const is_correct = !!q && String(a.selected_option).toUpperCase() === q.correct_option;
+      const selected = String(a.selected_option).toUpperCase();
+      const is_correct = !!q && selected === q.correct_option;
       if (is_correct) correct += 1;
       await prisma.answers.create({
         data: {
           question_id: a.question_id,
           user_id,
-          selected_option: String(a.selected_option).toUpperCase(),
+          selected_option: selected,
           is_correct,
         },
+      });
+
+      details.push({
+        question_id: q?.question_id,
+        question_text: q?.question_text || '',
+        option_a: q?.option_a || '',
+        option_b: q?.option_b || '',
+        option_c: q?.option_c || null,
+        option_d: q?.option_d || null,
+        selected_option: selected,
+        correct_option: q?.correct_option || null,
+        is_correct,
       });
     }
 
     const score = Math.round((correct / Math.max(1, qs.length)) * 100);
     await prisma.quizzes.update({ where: { quiz_id: quizId }, data: { total_score: score } });
-    res.json({ score, total: qs.length, correct });
+    res.json({ score, total: qs.length, correct, answers: details });
   } catch (err) {
     next(err);
   }
