@@ -61,9 +61,12 @@ export default function GoalEditModal({ isOpen, onClose, goal, onSave }: GoalEdi
         onSave(updatedGoal);
         onClose();
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error updating goal:', err);
-      setError(err.response?.data?.error || 'Failed to update goal');
+      const msg = (typeof err === 'object' && err !== null && 'response' in err && (err as any).response?.data?.error)
+        ? (err as any).response.data.error
+        : 'Failed to update goal';
+      setError(msg);
     } finally {
       setLoading(false);
     }

@@ -2,8 +2,22 @@
 
 import { useState } from "react";
 
-export default function CreateGoalModal({ isOpen, onClose, onSave }: any) {
-  const [form, setForm] = useState({
+type CreateGoalForm = {
+  title: string;
+  description: string;
+  difficulty_level: string;
+  start_date: string;
+  end_date: string;
+};
+
+interface CreateGoalModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (form: CreateGoalForm) => void;
+}
+
+export default function CreateGoalModal({ isOpen, onClose, onSave }: CreateGoalModalProps) {
+  const [form, setForm] = useState<CreateGoalForm>({
     title: "",
     description: "",
     difficulty_level: "Easy",

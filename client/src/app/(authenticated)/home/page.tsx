@@ -122,10 +122,11 @@ export default function HomePage() {
   const handleSaveGoal = (updatedGoal: Goal) => {
     setGoals(prevGoals => prevGoals.map(goal => goal.goal_id === updatedGoal.goal_id ? updatedGoal : goal));
   };
+  type GoalCreate = Omit<Goal, 'goal_id'> & { user_id: string };
   const handleCreateGoal = async (formData: Omit<Goal, 'goal_id'>) => {
     if (!session?.user?.user_id) return;
     try {
-      const payload = { ...formData, user_id: session.user.user_id } as any;
+      const payload: GoalCreate = { ...formData, user_id: session.user.user_id };
   const response = await api.post('/api/goals', payload);
       const createdGoal: Goal = response.data.goal ?? response.data;
       setGoals(prev => [createdGoal, ...prev]);

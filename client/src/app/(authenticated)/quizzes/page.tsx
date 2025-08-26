@@ -10,8 +10,17 @@ type Task = {
   description?: string;
   plan?: { date?: string; goal?: { goal_id: string; title: string } };
 };
+
 type Quiz = { quiz_id: string; title: string; questions: Question[] };
-type Question = { question_id: string; question_text: string; option_a: string; option_b: string; option_c: string; option_d: string };
+
+type Question = {
+  question_id: string;
+  question_text: string;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+};
 
 export default function QuizzesPage() {
   const { data: session } = useSession();
@@ -25,7 +34,7 @@ export default function QuizzesPage() {
   const { data: tasksRes, isLoading } = useQuery<{ tasks: Task[] }>({
     queryKey: ["user-tasks", userId],
     queryFn: async () => {
-  const res = await api.get(`/api/users/${userId}/tasks`);
+      const res = await api.get(`/api/users/${userId}/tasks`);
       return res.data;
     },
     enabled: !!userId,
@@ -35,7 +44,7 @@ export default function QuizzesPage() {
   const tasks = (tasksRes?.tasks || []).filter((t) => !!t.plan?.date);
 
   // Helpers for date ops (local time)
-  const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   const today = new Date();
   const todayKey = ymd(today);
   const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
@@ -58,9 +67,9 @@ export default function QuizzesPage() {
   }, {});
   const prevKeysSorted = Object.keys(prevGroups).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
 
-  const genQuiz = useMutation({
+  const genQuiz = useMutation<Quiz, Error, string>({
     mutationFn: async (taskId: string) => {
-  const res = await api.get(`/api/quizzes/from-task/${taskId}`, { params: { count: 12 } });
+      const res = await api.get(`/api/quizzes/from-task/${taskId}`, { params: { count: 12 } });
       return res.data as Quiz;
     },
     onMutate: (taskId: string) => {
@@ -69,7 +78,7 @@ export default function QuizzesPage() {
     onSuccess: (quiz) => {
       setActiveQuiz(quiz);
       setAnswers({});
-  setResult(null);
+      setResult(null);
       setOpen(true);
     },
     onError: () => {
@@ -80,14 +89,14 @@ export default function QuizzesPage() {
     },
   });
 
-  const submitQuiz = useMutation({
+  const submitQuiz = useMutation<{ score: number; total: number; correct: number }, Error, void>({
     mutationFn: async () => {
       if (!activeQuiz || !userId) throw new Error("No quiz");
       const payload = {
         user_id: userId,
         answers: Object.entries(answers).map(([question_id, selected_option]) => ({ question_id, selected_option })),
       };
-  const res = await api.post(`/api/quizzes/${activeQuiz.quiz_id}/submit`, payload);
+      const res = await api.post(`/api/quizzes/${activeQuiz.quiz_id}/submit`, payload);
       return res.data as { score: number; total: number; correct: number };
     },
     onSuccess: (data) => {
@@ -97,7 +106,7 @@ export default function QuizzesPage() {
 
   const missing = useMemo(() => {
     if (!activeQuiz) return 0;
-    return activeQuiz.questions.filter(q => !answers[q.question_id]).length;
+    return activeQuiz.questions.filter((q) => !answers[q.question_id]).length;
   }, [activeQuiz, answers]);
 
   return (
@@ -116,24 +125,32 @@ export default function QuizzesPage() {
           <div>
             <div className="text-xs font-semibold text-gray-700 mb-2">Today</div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {todayTasks.map((t) => (
-                <button
-                  key={t.task_id}
-                  className="relative text-left border rounded-md p-3 hover:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:opacity-60"
-                  onClick={() => genQuiz.mutate(t.task_id)}
-                  disabled={(genQuiz as any).isPending}
-                >
-                  <div className="font-medium text-gray-900 line-clamp-1">{t.title}</div>
-                  {t.plan?.goal?.title && <div className="text-xs text-teal-700 mt-0.5">{t.plan.goal.title}</div>}
-                  {t.description && <div className="text-xs text-gray-500 line-clamp-2 mt-1">{t.description}</div>}
-                  {(genQuiz as any).isPending && loadingTaskId === t.task_id && (
-                    <div className="absolute right-3 top-3 h-4 w-4 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
-                  )}
-                </button>
-              ))}
-              {todayTasks.length === 0 && !isLoading && (
-                <div className="text-sm text-gray-500">No tasks for today.</div>
-              )}
+              {tasks
+                .filter((t) => {
+                  // keep existing filtering logic
+                  const today = new Date();
+                  const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+                  const d = new Date(t.plan!.date!);
+                  const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+                  const todayKey = ymd(today);
+                  return d.getTime() <= endOfToday.getTime() && ymd(d) === todayKey;
+                })
+                .map((t) => (
+                  <button
+                    key={t.task_id}
+                    className="relative text-left border rounded-md p-3 hover:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:opacity-60"
+                    onClick={() => genQuiz.mutate(t.task_id)}
+                    disabled={genQuiz.isPending}
+                  >
+                    <div className="font-medium text-gray-900 line-clamp-1">{t.title}</div>
+                    {t.plan?.goal?.title && <div className="text-xs text-teal-700 mt-0.5">{t.plan.goal.title}</div>}
+                    {t.description && <div className="text-xs text-gray-500 line-clamp-2 mt-1">{t.description}</div>}
+                    {genQuiz.isPending && loadingTaskId === t.task_id && (
+                      <div className="absolute right-3 top-3 h-4 w-4 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
+                    )}
+                  </button>
+                ))}
+              {todayTasks.length === 0 && !isLoading && <div className="text-sm text-gray-500">No tasks for today.</div>}
             </div>
           </div>
 
@@ -151,12 +168,12 @@ export default function QuizzesPage() {
                           key={t.task_id}
                           className="relative text-left border rounded-md p-3 hover:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:opacity-60"
                           onClick={() => genQuiz.mutate(t.task_id)}
-                          disabled={(genQuiz as any).isPending}
+                          disabled={genQuiz.isPending}
                         >
                           <div className="font-medium text-gray-900 line-clamp-1">{t.title}</div>
                           {t.plan?.goal?.title && <div className="text-xs text-teal-700 mt-0.5">{t.plan.goal.title}</div>}
                           {t.description && <div className="text-xs text-gray-500 line-clamp-2 mt-1">{t.description}</div>}
-                          {(genQuiz as any).isPending && loadingTaskId === t.task_id && (
+                          {genQuiz.isPending && loadingTaskId === t.task_id && (
                             <div className="absolute right-3 top-3 h-4 w-4 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
                           )}
                         </button>
@@ -168,9 +185,7 @@ export default function QuizzesPage() {
             </div>
           )}
 
-          {pastAndToday.length === 0 && !isLoading && (
-            <div className="text-sm text-gray-500">No past or today tasks found.</div>
-          )}
+          {pastAndToday.length === 0 && !isLoading && <div className="text-sm text-gray-500">No past or today tasks found.</div>}
         </div>
 
         {/* Modal */}
@@ -183,26 +198,35 @@ export default function QuizzesPage() {
                   <div className="text-sm text-gray-500">Quiz</div>
                   <div className="text-lg font-semibold text-gray-900">{activeQuiz.title}</div>
                 </div>
-                <button className="text-gray-500 hover:text-gray-700" onClick={() => setOpen(false)}>✕</button>
+                <button className="text-gray-500 hover:text-gray-700" onClick={() => setOpen(false)}>
+                  ✕
+                </button>
               </div>
 
               <div className="p-4 space-y-4">
                 {activeQuiz.questions.map((q, idx) => (
                   <div key={q.question_id} className="border rounded-md p-3">
-                    <div className="text-sm text-gray-900 mb-2">{idx + 1}. {q.question_text}</div>
+                    <div className="text-sm text-gray-900 mb-2">
+                      {idx + 1}. {q.question_text}
+                    </div>
                     <div className="grid grid-cols-1 gap-2">
-                      {[['A', q.option_a], ['B', q.option_b], ['C', q.option_c], ['D', q.option_d]].map(([key, val]) => (
-                        <label key={key as string} className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="radio"
-                            name={q.question_id}
-                            value={key as string}
-                            checked={answers[q.question_id] === key}
-                            onChange={() => setAnswers((m) => ({ ...m, [q.question_id]: key as string }))}
-                          />
-                          <span className="text-sm text-gray-700">{val}</span>
-                        </label>
-                      ))}
+                      {[[
+                        "A",
+                        q.option_a,
+                      ], ["B", q.option_b], ["C", q.option_c], ["D", q.option_d]].map(
+                        ([key, val]) => (
+                          <label key={key as string} className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              name={q.question_id}
+                              value={key as string}
+                              checked={answers[q.question_id] === key}
+                              onChange={() => setAnswers((m) => ({ ...m, [q.question_id]: key as string }))}
+                            />
+                            <span className="text-sm text-gray-700">{val}</span>
+                          </label>
+                        )
+                      )}
                     </div>
                   </div>
                 ))}
@@ -213,17 +237,23 @@ export default function QuizzesPage() {
                   {result ? (
                     <span className="font-medium text-gray-900">Score: {result.score}%</span>
                   ) : (
-                    missing > 0 ? `${missing} unanswered` : 'All answered'
+                    missing > 0 ? `${missing} unanswered` : "All answered"
                   )}
                   {result && (
-                    <span className="ml-2 text-gray-500">({result.correct}/{result.total} correct)</span>
+                    <span className="ml-2 text-gray-500">
+                      ({result.correct}/{result.total} correct)
+                    </span>
                   )}
                 </div>
 
                 {result ? (
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => { setOpen(false); setActiveQuiz(null); setResult(null); }}
+                      onClick={() => {
+                        setOpen(false);
+                        setActiveQuiz(null);
+                        setResult(null);
+                      }}
                       className="px-4 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
                     >
                       Close
@@ -231,11 +261,11 @@ export default function QuizzesPage() {
                   </div>
                 ) : (
                   <button
-                    disabled={(submitQuiz as any).isPending}
+                    disabled={submitQuiz.isPending}
                     onClick={() => submitQuiz.mutate()}
                     className="px-4 py-2 rounded-md bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-50"
                   >
-                    {(submitQuiz as any).isPending ? 'Submitting…' : 'Submit Quiz'}
+                    {submitQuiz.isPending ? "Submitting…" : "Submit Quiz"}
                   </button>
                 )}
               </div>
@@ -244,7 +274,7 @@ export default function QuizzesPage() {
         )}
       </div>
       {/* Global generating overlay before modal opens */}
-      {(genQuiz as any).isPending && !open && (
+      {genQuiz.isPending && !open && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30">
           <div className="bg-white rounded-md p-4 shadow">
             <div className="flex items-center gap-3">
