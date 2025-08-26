@@ -8,14 +8,14 @@ const authOptions = {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     }),
   ],
+  secret: process.env.NEXTAUTH_SECRET, // <-- REQUIRED in production
   callbacks: {
     async signIn({ user }) {
       try {
         console.log('🔐 Sign in callback triggered for:', user.email);
         
-  // Call backend to store user info
-  const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000').replace(/\/$/, '');
-  const response = await fetch(`${API_BASE}/api/auth/users`, {
+        const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000').replace(/\/$/, '');
+        const response = await fetch(`${API_BASE}/api/auth/users`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -40,25 +40,22 @@ const authOptions = {
         return true;
       } catch (error) {
         console.error('❌ Error saving user to database:', error);
-        // Still allow sign in even if database save fails
-        return true;
+        return true; // allow sign in even if DB save fails
       }
     },
-  async jwt({ token, user }) {
-      // Add user_id to JWT token if available
+    async jwt({ token, user }) {
       if (user?.user_id) {
         token.user_id = user.user_id;
       }
       return token;
     },
-  async session({ session, token }) {
-      // Add user_id to session if available
+    async session({ session, token }) {
       if (token?.user_id) {
         session.user.user_id = token.user_id;
       }
       return session;
     },
-  async redirect() {
+    async redirect() {
       return "/home";
     },
   },
@@ -67,4 +64,3 @@ const authOptions = {
 
 const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };
-
